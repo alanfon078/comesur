@@ -1,0 +1,16 @@
+# Dependencias de Node.js (Backend)
+backend/node_modules/
+backend/.env
+
+# Dependencias y compilaciones de Flutter (Frontend)
+frontend/.dart_tool/
+frontend/.packages
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/android/key.properties
+
+# Archivos del sistema operativo y editores
+.DS_Store
+.vscode/
+.idea/
