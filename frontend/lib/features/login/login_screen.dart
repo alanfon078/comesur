@@ -1,6 +1,7 @@
 // Autor: Alan Yael Fonseca Ruiz
 
 import 'package:flutter/material.dart';
+import 'package:frontend/features/foodfilter/screens/filter_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -81,17 +82,17 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 30),
 
               // Botón Principal
+              // Botón Principal
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor, // Verde
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
+                  // ... (tu estilo anterior se queda igual)
                 ),
                 onPressed: () {
-                  // Lógica para iniciar sesión
+                  // Navegación hacia la pantalla de Filtros (CU1)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FilterScreen()),
+                  );
                 },
                 child: const Text('INICIAR SESIÓN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),

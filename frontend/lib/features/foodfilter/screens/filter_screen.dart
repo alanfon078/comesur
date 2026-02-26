@@ -1,6 +1,9 @@
-// Alan Yael Fonseca Ruiz
+// Autor: Alan Yael Fonseca Ruiz
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'results_screen.dart'; // Importamos la nueva pantalla
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({super.key});
@@ -13,15 +16,60 @@ class _FilterScreenState extends State<FilterScreen> {
   final TextEditingController _comidaController = TextEditingController();
   final TextEditingController _presupuestoController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  
+  bool _isLoading = false; // Variable para mostrar un símbolo de carga
 
-  void _aplicarFiltros() {
+  Future<void> _aplicarFiltros() async {
     if (_formKey.currentState!.validate()) {
-      // Aquí se llamaría a la lógica para buscar en la BD (aplicarFiltros)
+      setState(() {
+        _isLoading = true; // Iniciamos la animación de carga
+      });
+
       final tipoComida = _comidaController.text;
       final presupuesto = _presupuestoController.text;
-      
-      print('Buscando: $tipoComida con presupuesto máximo de: \$$presupuesto');
-      // Navegar a la pantalla de resultados (listaOrdenada)
+
+      try {
+        // Configuramos la petición hacia tu backend en Node.js
+        final uri = Uri.parse('http://localhost:3000/api/negocios/filtrar').replace(
+          queryParameters: {
+            if (tipoComida.isNotEmpty) 'tipoComida': tipoComida,
+            if (presupuesto.isNotEmpty) 'presupuesto': presupuesto,
+          },
+        );
+
+        // Hacemos la consulta [cite: 46]
+        final response = await http.get(uri);
+
+        List<dynamic> resultados = [];
+        
+        if (response.statusCode == 200) {
+          resultados = jsonDecode(response.body); // Convertimos el JSON a lista
+        } else if (response.statusCode == 404) {
+          resultados = []; // Si da 404, la lista queda vacía para mostrar el mensaje de error [cite: 66, 67]
+        }
+
+        // Si la pantalla sigue activa, navegamos a los resultados y mostramos la lista ordenada [cite: 47]
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ResultsScreen(resultados: resultados),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error de conexión con el servidor. Verifica que Node.js esté encendido.')), // Escenario 7a [cite: 63]
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false; // Detenemos la animación de carga
+          });
+        }
+      }
     }
   }
 
@@ -43,7 +91,6 @@ class _FilterScreenState extends State<FilterScreen> {
             children: [
               const SizedBox(height: 20),
               
-              // Input: Tipo de Comida
               const Text('TIPO DE COMIDA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextFormField(
@@ -60,14 +107,13 @@ class _FilterScreenState extends State<FilterScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Por favor ingresa qué deseas comer'; // Notificación si el nombre es inválido
+                    return 'Por favor ingresa qué deseas comer'; 
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 20),
 
-              // Input: Presupuesto Máximo (Opcional)
               const Text('PRESUPUESTO MÁXIMO (OPCIONAL)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               TextFormField(
@@ -87,7 +133,7 @@ class _FilterScreenState extends State<FilterScreen> {
                   if (value != null && value.isNotEmpty) {
                     final numero = double.tryParse(value);
                     if (numero == null || numero <= 0) {
-                      return 'Ingresa un presupuesto válido mayor a $0'; // Validación del escenario alternativo 5a
+                      return 'Ingresa un presupuesto válido mayor a \$0'; // Corrección del símbolo de dólar aplicada [cite: 61, 62]
                     }
                   }
                   return null;
@@ -95,7 +141,7 @@ class _FilterScreenState extends State<FilterScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Botón Aplicar Filtros
+              // Botón Aplicar Filtros con indicador de carga
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
@@ -105,8 +151,14 @@ class _FilterScreenState extends State<FilterScreen> {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
-                onPressed: _aplicarFiltros,
-                child: const Text('APLICAR FILTROS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                onPressed: _isLoading ? null : _aplicarFiltros,
+                child: _isLoading 
+                    ? const SizedBox(
+                        height: 20, 
+                        width: 20, 
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                      )
+                    : const Text('APLICAR FILTROS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
