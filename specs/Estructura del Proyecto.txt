@@ -1,0 +1,35 @@
+comesur_workspace/
+│
+├── backend/                  # Backend (Node.js + Express)
+│   ├── package.json              # Dependencias del servidor
+│   ├── .env                      # Variables de entorno (credenciales de BD, puertos)
+│   ├── src/
+│   │   ├── app.js                # Configuración principal de Express
+│   │   ├── server.js             # Punto de entrada del servidor
+│   │   ├── config/               # Configuraciones (ej. db.js para MySQL)
+│   │   ├── controllers/          # Lógica de las rutas (ej. negocioController.js)
+│   │   ├── models/               # Modelos de datos / Consultas SQL (ej. negocioModel.js)
+│   │   ├── routes/               # Definición de endpoints (ej. negocioRoutes.js)
+│   │   └── middlewares/          # Validaciones y autenticación
+│   └── database/                 # Scripts SQL para crear tablas y datos semilla
+│
+└── frontend/                  # Frontend (Flutter)
+    ├── pubspec.yaml              # Dependencias de la app móvil
+    ├── lib/
+    │   ├── main.dart             # Punto de entrada de la app
+    │   ├── core/
+    │   │   ├── theme/            # Configuración de colores oscuros/claros
+    │   │   └── constants/        # URLs de la API, cadenas de texto globales
+    │   ├── data/
+    │   │   ├── models/           # DTOs (ej. negocio_model.dart)
+    │   │   └── repositories/     # Peticiones HTTP al servidor Node.js
+    │   ├── features/
+	     ├──users
+	     │   │   ├── screens/				
+	     ├──foodfilter
+	     │   │   ├── screens/		
+	     ├──login
+	     │   │   ├── screens/
+    │   │   └── widgets/          # Componentes reutilizables (Botones, Tarjetas)
+    │   └── logic/                # Controladores de estado (BLoC, Provider o GetX)
+    └── assets/                   # Imágenes, íconos y logos (Logo de ComeSur)
