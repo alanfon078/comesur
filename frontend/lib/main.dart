@@ -1,5 +1,7 @@
 // Autor: Alan Yael Fonseca Ruiz
 import 'package:flutter/material.dart';
+import 'screens/business_detail.dart'; //Tarea 2. Autor: Janetzy Maldonado Nava
+  
 
 // Importamos las pantallas que creaste previamente
 import 'features/login/login_screen.dart';
@@ -52,7 +54,8 @@ class ComeSurApp extends StatelessWidget {
       ),
       
       // Cambiamos el home para que apunte a tu Login real
-      home: const LoginScreen(), 
+   //   home: const LoginScreen(), 
+      home: const BusinessDetail(id: 1), //Tarea 2. Autor: Janetzy Maldonado Nava
     );
   }
 }
