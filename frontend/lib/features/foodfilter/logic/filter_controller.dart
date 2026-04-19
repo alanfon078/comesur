@@ -8,46 +8,61 @@ class FilterController extends ChangeNotifier {
   bool isLoading = false;
   List<dynamic> resultados = [];
   String? error;
+  String? errorCode;
 
-  // Método que procesa el CU1: Filtrar comida según preferencias
-  Future<void> aplicarFiltros(String tipoComida, String presupuestoTxt) async {
+  // Método que procesa el CU1: Filtrar comida según preferencias, con retry automático
+  Future<void> aplicarFiltros(String tipoComida, String presupuestoTxt,
+      {int maxRetries = 1}) async {
     isLoading = true;
     error = null;
+    errorCode = null;
     resultados = [];
     notifyListeners();
 
-    try {
-      // Configuramos los parámetros de la URL
-      // Usamos 10.0.2.2 en lugar de localhost para el emulador de Android
-      final uri = Uri.parse('http://10.0.2.2:3000/api/negocios/filtrar').replace(
-        queryParameters: {
-          if (tipoComida.isNotEmpty) 'tipoComida': tipoComida,
-          if (presupuestoTxt.isNotEmpty) 'presupuesto': presupuestoTxt,
-        },
-      );
+    int intentos = 0;
+    while (intentos <= maxRetries) {
+      try {
+        // Usamos 10.0.2.2 en lugar de localhost para el emulador de Android
+        final uri =
+            Uri.parse('http://10.0.2.2:3000/api/negocios/filtrar').replace(
+          queryParameters: {
+            if (tipoComida.isNotEmpty) 'tipoComida': tipoComida,
+            if (presupuestoTxt.isNotEmpty) 'presupuesto': presupuestoTxt,
+          },
+        );
 
-      print('Realizando petición a: $uri');
+        final response =
+            await http.get(uri).timeout(const Duration(seconds: 10));
 
-      // Hacemos la petición GET al servidor Node.js
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        // Si la petición es exitosa, decodificamos el JSON
-        resultados = jsonDecode(response.body);
-      } else if (response.statusCode == 404) {
-        // Manejo del escenario alternativo 8a: No se encuentran resultados
-        error = 'No hay comidas que coincidan con los filtros especificados';
-      } else {
-        // Otros errores del servidor
-        error = 'Ocurrió un error al consultar los datos. Código: ${response.statusCode}';
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body);
+          resultados = body['data'] as List<dynamic>;
+        } else if (response.statusCode == 404) {
+          error = 'No hay comidas que coincidan con los filtros especificados.';
+          errorCode = 'NO_RESULTS_FOUND';
+        } else {
+          final body = jsonDecode(response.body);
+          errorCode =
+              body['error']?['code'] ?? 'ERROR_${response.statusCode}';
+          final mensaje =
+              body['error']?['message'] ?? 'Ocurrió un error inesperado';
+          error = '$mensaje (Código: $errorCode)';
+        }
+        break; // Salir del loop si la petición fue exitosa o error definido
+      } catch (e) {
+        intentos++;
+        if (intentos > maxRetries) {
+          error =
+              'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+          errorCode = 'CONNECTION_ERROR';
+        } else {
+          // Esperar brevemente antes de reintentar
+          await Future.delayed(const Duration(seconds: 1));
+        }
       }
-    } catch (e) {
-      // Manejo del escenario alternativo 7a: Falla de conexión a la base de datos/servidor
-      error = 'No se pudo concretar la búsqueda. Verifica tu conexión.';
-      print('Error de conexión: $e');
-    } finally {
-      isLoading = false;
-      notifyListeners();
     }
+
+    isLoading = false;
+    notifyListeners();
   }
 }
