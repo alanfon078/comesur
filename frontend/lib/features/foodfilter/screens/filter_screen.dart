@@ -64,7 +64,7 @@ class _FilterScreenState extends State<FilterScreen> {
 
       while (intentos <= maxRetries) {
         try {
-          final uri = Uri.parse('http://localhost:3000/api/negocios/filtrar').replace(
+          final uri = Uri.parse('http://10.0.2.2:3000/api/negocios/filtrar').replace(
             queryParameters: {
               if (tipoComida.isNotEmpty) 'tipoComida': tipoComida,
               if (presupuesto.isNotEmpty) 'presupuesto': presupuesto,
