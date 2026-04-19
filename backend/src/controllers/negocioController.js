@@ -53,7 +53,8 @@ const filtrarComida = async (req, res) => {
 const obtenerNegocio = async (req, res) => {
     const { id } = req.params;
 
-    if (!id || isNaN(parseInt(id, 10)) || parseInt(id, 10) <= 0) {
+    const parsedId = parseInt(id, 10);
+    if (!id || isNaN(parsedId) || parsedId <= 0) {
         return res.status(400).json({
             success: false,
             error: { message: 'ID de negocio inválido', code: 'VALIDATION_ERROR' }

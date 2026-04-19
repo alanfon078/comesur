@@ -12,7 +12,7 @@ class FilterController extends ChangeNotifier {
 
   // Método que procesa el CU1: Filtrar comida según preferencias, con retry automático
   Future<void> aplicarFiltros(String tipoComida, String presupuestoTxt,
-      {int maxRetries = 1}) async {
+      {int maxAttempts = 2}) async {
     isLoading = true;
     error = null;
     errorCode = null;
@@ -20,7 +20,7 @@ class FilterController extends ChangeNotifier {
     notifyListeners();
 
     int intentos = 0;
-    while (intentos <= maxRetries) {
+    while (intentos < maxAttempts) {
       try {
         // Usamos 10.0.2.2 en lugar de localhost para el emulador de Android
         final uri =
@@ -51,7 +51,7 @@ class FilterController extends ChangeNotifier {
         break; // Salir del loop si la petición fue exitosa o error definido
       } catch (e) {
         intentos++;
-        if (intentos > maxRetries) {
+        if (intentos >= maxAttempts) {
           error =
               'No se pudo conectar al servidor. Verifica tu conexión a internet.';
           errorCode = 'CONNECTION_ERROR';

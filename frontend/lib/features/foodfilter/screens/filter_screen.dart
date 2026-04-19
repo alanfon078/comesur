@@ -57,12 +57,12 @@ class _FilterScreenState extends State<FilterScreen> {
       await _historialService.guardarBusqueda(tipoComida, presupuesto);
 
       int intentos = 0;
-      const maxRetries = 1;
+      const maxAttempts = 2;
       List<dynamic> resultados = [];
       String? errorMsg;
       String? errorCode;
 
-      while (intentos <= maxRetries) {
+      while (intentos < maxAttempts) {
         try {
           final uri = Uri.parse('http://10.0.2.2:3000/api/negocios/filtrar').replace(
             queryParameters: {
@@ -91,7 +91,7 @@ class _FilterScreenState extends State<FilterScreen> {
           }
         } catch (e) {
           intentos++;
-          if (intentos > maxRetries) {
+          if (intentos >= maxAttempts) {
             errorMsg = 'Error de conexión con el servidor. Verifica que el servidor esté encendido.';
             errorCode = 'CONNECTION_ERROR';
           } else {

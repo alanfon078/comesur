@@ -11,7 +11,7 @@ class BusinessDetailController extends ChangeNotifier {
   String? errorCode;
 
   // Obtener detalle del negocio por ID, con retry automático
-  Future<void> cargarNegocio(int negocioId, {int maxRetries = 1}) async {
+  Future<void> cargarNegocio(int negocioId, {int maxAttempts = 2}) async {
     isLoading = true;
     error = null;
     errorCode = null;
@@ -19,7 +19,7 @@ class BusinessDetailController extends ChangeNotifier {
     notifyListeners();
 
     int intentos = 0;
-    while (intentos <= maxRetries) {
+    while (intentos < maxAttempts) {
       try {
         final uri = Uri.parse('http://10.0.2.2:3000/api/negocios/$negocioId');
         final response = await http
@@ -45,7 +45,7 @@ class BusinessDetailController extends ChangeNotifier {
         }
       } catch (e) {
         intentos++;
-        if (intentos > maxRetries) {
+        if (intentos >= maxAttempts) {
           error = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
           errorCode = 'CONNECTION_ERROR';
         } else {
