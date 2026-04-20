@@ -1,14 +1,19 @@
 // Autor: Alan Yael Fonseca Ruiz
 const express = require('express');
-const cors = require('cors'); // <-- 1. Importamos cors
+const cors = require('cors');
 const app = express();
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
+
 const negocioRoutes = require('./routes/negocioRoutes');
+const authRoutes = require('./routes/authRoutes');
+const favoritoRoutes = require('./routes/favoritoRoutes');
+const resenaRoutes = require('./routes/resenaRoutes');
+const perfilRoutes = require('./routes/perfilRoutes');
 
 // --- Middlewares ---
-app.use(cors()); // <-- 2. Habilitamos cors para permitir conexiones desde Flutter Web
+app.use(cors());
 app.use(express.json());
 
 // --- Rutas ---
@@ -16,7 +21,11 @@ app.get('/api', (req, res) => {
     res.json({ mensaje: 'API de ComeSur en línea y funcionando.' });
 });
 
+app.use('/api/auth', authRoutes);
 app.use('/api/negocios', negocioRoutes);
+app.use('/api/favoritos', favoritoRoutes);
+app.use('/api/resenas', resenaRoutes);
+app.use('/api/perfil', perfilRoutes);
 
 app.listen(PORT, () => {
     console.log(`Servidor de ComeSur ejecutándose en el puerto ${PORT}`);
