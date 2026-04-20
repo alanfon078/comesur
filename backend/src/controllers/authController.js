@@ -30,7 +30,14 @@ const register = async (req, res) => {
             error: { message: 'Nombre, correo y contraseña son requeridos', code: 'VALIDATION_ERROR' }
         });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    if (!correo || typeof correo !== 'string' || correo.length > 120) {
+        return res.status(400).json({
+            success: false,
+            error: { message: 'Formato de correo inválido', code: 'VALIDATION_ERROR' }
+        });
+    }
+    const atIndex = correo.indexOf('@');
+    if (atIndex <= 0 || atIndex === correo.length - 1 || !correo.slice(atIndex).includes('.')) {
         return res.status(400).json({
             success: false,
             error: { message: 'Formato de correo inválido', code: 'VALIDATION_ERROR' }
@@ -52,7 +59,7 @@ const register = async (req, res) => {
             });
         }
 
-        const hash = await bcrypt.hash(contrasena, 12);
+        const hash = await bcrypt.hash(contrasena, 10);
         const [result] = await db.execute(
             'INSERT INTO Usuario (nombre, correo, contrasena, rol) VALUES (?, ?, ?, ?)',
             [nombre, correo, hash, 'Estudiante']

@@ -13,8 +13,8 @@ const favoritoLimiter = rateLimit({
     message: { success: false, error: { message: 'Demasiadas solicitudes, intenta más tarde', code: 'RATE_LIMIT_EXCEEDED' } }
 });
 
-router.use(verifyToken);
 router.use(favoritoLimiter);
+router.use(verifyToken);
 
 router.get('/', favoritoController.obtenerFavoritos);
 router.post('/', favoritoController.agregarFavorito);

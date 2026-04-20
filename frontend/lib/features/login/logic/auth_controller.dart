@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'dart:convert';
-import '../../services/auth_service.dart';
+import '../../../services/auth_service.dart';
 
 const String _baseUrl = 'http://10.0.2.2:3000/api';
 

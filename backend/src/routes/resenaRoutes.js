@@ -13,8 +13,8 @@ const resenaLimiter = rateLimit({
     message: { success: false, error: { message: 'Demasiadas solicitudes, intenta más tarde', code: 'RATE_LIMIT_EXCEEDED' } }
 });
 
-router.use(verifyToken);
 router.use(resenaLimiter);
+router.use(verifyToken);
 
 router.post('/', resenaController.crearOActualizarResena);
 router.get('/negocio/:id', resenaController.obtenerMiResena);

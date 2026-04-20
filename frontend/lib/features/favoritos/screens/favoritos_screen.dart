@@ -11,11 +11,8 @@ class FavoritosScreen extends StatefulWidget {
   State<FavoritosScreen> createState() => _FavoritosScreenState();
 }
 
-class _FavoritosScreenState extends State<FavoritosScreen> with AutomaticKeepAliveClientMixin {
+class _FavoritosScreenState extends State<FavoritosScreen> {
   final FavoritosController _controller = FavoritosController();
-
-  @override
-  bool get wantKeepAlive => false;
 
   @override
   void initState() {
@@ -37,7 +34,6 @@ class _FavoritosScreenState extends State<FavoritosScreen> with AutomaticKeepAli
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).primaryColor;
 
