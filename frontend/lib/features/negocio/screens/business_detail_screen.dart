@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import '../logic/business_detail_controller.dart';
+import '../../resenas/widgets/rating_bottom_sheet.dart';
+import '../../resenas/logic/resena_controller.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final int negocioId;
@@ -19,13 +21,15 @@ class BusinessDetailScreen extends StatefulWidget {
 
 class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   final BusinessDetailController _controller = BusinessDetailController();
-  bool _esFavorito = false;
+  final ResenaController _resenaController = ResenaController();
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onControllerUpdate);
     _controller.cargarNegocio(widget.negocioId);
+    _controller.verificarFavorito(widget.negocioId);
+    _resenaController.cargarMiResena(widget.negocioId);
   }
 
   void _onControllerUpdate() {
@@ -36,7 +40,32 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   void dispose() {
     _controller.removeListener(_onControllerUpdate);
     _controller.dispose();
+    _resenaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _abrirCalificacion() async {
+    final resenaExistente = _resenaController.resenaExistente;
+    final guardado = await mostrarRatingBottomSheet(
+      context: context,
+      negocioId: widget.negocioId,
+      negocioNombre: widget.negocioNombre,
+      calificacionInicial: resenaExistente?['calificacion'] as int?,
+      comentarioInicial: resenaExistente?['comentario'] as String?,
+    );
+    if (guardado) {
+      // Recargar negocio para ver nuevo promedio y reseñas
+      await _controller.cargarNegocio(widget.negocioId);
+      await _resenaController.cargarMiResena(widget.negocioId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Reseña guardada exitosamente!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -138,6 +167,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
     final n = _controller.negocio!;
     final menu = (n['menu'] as List<dynamic>?) ?? [];
     final resenas = (n['resenas'] as List<dynamic>?) ?? [];
+    final miResena = _resenaController.resenaExistente;
 
     return CustomScrollView(
       slivers: [
@@ -146,24 +176,25 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
           expandedHeight: 220.0,
           pinned: true,
           actions: [
+            // Botón Favorito
             IconButton(
               icon: Icon(
-                _esFavorito ? Icons.favorite : Icons.favorite_border,
-                color: _esFavorito ? Colors.red : Colors.white,
+                _controller.esFavorito ? Icons.favorite : Icons.favorite_border,
+                color: _controller.esFavorito ? Colors.red : Colors.white,
               ),
-              tooltip: _esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos',
-              onPressed: () {
-                setState(() {
-                  _esFavorito = !_esFavorito;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      _esFavorito ? 'Agregado a favoritos' : 'Quitado de favoritos',
+              tooltip: _controller.esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos',
+              onPressed: () async {
+                await _controller.toggleFavorito(widget.negocioId);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        _controller.esFavorito ? 'Agregado a favoritos' : 'Quitado de favoritos',
+                      ),
+                      duration: const Duration(seconds: 1),
                     ),
-                    duration: const Duration(seconds: 1),
-                  ),
-                );
+                  );
+                }
               },
             ),
           ],
@@ -197,7 +228,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Calificación y categoría
+                // Calificación y categoría + Botón Calificar
                 Row(
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 20),
@@ -212,6 +243,25 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                         label: Text(n['categoria']),
                         backgroundColor: primaryColor.withOpacity(0.15),
                       ),
+                    const Spacer(),
+                    // Botón Calificar
+                    OutlinedButton.icon(
+                      icon: Icon(
+                        miResena != null ? Icons.edit : Icons.star_border,
+                        size: 16,
+                        color: primaryColor,
+                      ),
+                      label: Text(
+                        miResena != null ? 'Editar reseña' : 'Calificar',
+                        style: TextStyle(color: primaryColor, fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        side: BorderSide(color: primaryColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      onPressed: _abrirCalificacion,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -257,13 +307,22 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                 const Divider(height: 32),
 
                 // Reseñas
-                Text(
-                  'Calificaciones y reseñas',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Calificaciones y reseñas',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${resenas.length} reseña${resenas.length != 1 ? 's' : ''}',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
 

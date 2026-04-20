@@ -3,12 +3,15 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../../../services/auth_service.dart';
 
 class BusinessDetailController extends ChangeNotifier {
   bool isLoading = false;
   Map<String, dynamic>? negocio;
   String? error;
   String? errorCode;
+  bool esFavorito = false;
+  bool _favoritoLoading = false;
 
   // Obtener detalle del negocio por ID, con retry automático
   Future<void> cargarNegocio(int negocioId, {int maxAttempts = 2}) async {
@@ -18,12 +21,15 @@ class BusinessDetailController extends ChangeNotifier {
     negocio = null;
     notifyListeners();
 
+    final token = await AuthService.obtenerToken();
+    final headers = token != null ? {'Authorization': 'Bearer $token'} : <String, String>{};
+
     int intentos = 0;
     while (intentos < maxAttempts) {
       try {
         final uri = Uri.parse('http://10.0.2.2:3000/api/negocios/$negocioId');
         final response = await http
-            .get(uri)
+            .get(uri, headers: headers)
             .timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
@@ -49,7 +55,6 @@ class BusinessDetailController extends ChangeNotifier {
           error = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
           errorCode = 'CONNECTION_ERROR';
         } else {
-          // Esperar brevemente antes de reintentar
           await Future.delayed(const Duration(seconds: 1));
         }
       }
@@ -57,5 +62,65 @@ class BusinessDetailController extends ChangeNotifier {
 
     isLoading = false;
     notifyListeners();
+  }
+
+  // Verificar si el negocio ya está en favoritos del usuario
+  Future<void> verificarFavorito(int negocioId) async {
+    try {
+      final token = await AuthService.obtenerToken();
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:3000/api/favoritos'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final lista = body['data'] as List<dynamic>;
+        esFavorito = lista.any((f) => f['negocio_id'] == negocioId);
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  // Toggle favorito
+  Future<void> toggleFavorito(int negocioId) async {
+    if (_favoritoLoading) return;
+    _favoritoLoading = true;
+
+    try {
+      final token = await AuthService.obtenerToken();
+      if (token == null) return;
+
+      if (esFavorito) {
+        final response = await http.delete(
+          Uri.parse('http://10.0.2.2:3000/api/favoritos/$negocioId'),
+          headers: {'Authorization': 'Bearer $token'},
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          esFavorito = false;
+          notifyListeners();
+        }
+      } else {
+        final response = await http.post(
+          Uri.parse('http://10.0.2.2:3000/api/favoritos'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'negocio_id': negocioId}),
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 201 || response.statusCode == 409) {
+          esFavorito = true;
+          notifyListeners();
+        }
+      }
+    } catch (_) {
+    } finally {
+      _favoritoLoading = false;
+    }
   }
 }
