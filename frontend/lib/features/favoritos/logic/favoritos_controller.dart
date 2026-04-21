@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../services/auth_service.dart';
 
-const String _baseUrl = 'http://10.0.2.2:3000/api';
+const String _baseUrl = 'http://192.168.100.5:3000/api';
 
 class FavoritosController extends ChangeNotifier {
   bool isLoading = false;
