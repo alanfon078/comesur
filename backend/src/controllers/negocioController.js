@@ -15,9 +15,10 @@ const filtrarComida = async (req, res) => {
         const queryParams = [];
 
         if (tipoComida) {
-            query += ` AND n.tipoComida LIKE ?`;
-            queryParams.push(`%${tipoComida}%`);
-        }
+            // Buscar en la categoría del negocio o en el nombre del platillo
+            query += ` AND (n.tipoComida LIKE ? OR p.nombre LIKE ?)`;
+            queryParams.push(`%${tipoComida}%`, `%${tipoComida}%`);
+        }   
 
         if (presupuesto && !isNaN(presupuesto) && Number(presupuesto) > 0) {
             query += ` AND p.precio <= ?`;
