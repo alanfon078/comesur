@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import '../logic/dashboard_controller.dart';
 import 'menu_gestion_screen.dart';
+import 'disponibilidad_screen.dart';
+import 'estadisticas_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -107,12 +109,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final negocio = _controller.negocio!;
     final stats = _controller.estadisticas;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final nuevasResenas = _controller.nuevasResenas;
 
     return RefreshIndicator(
       onRefresh: _controller.cargarDashboard,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Banner de nuevas reseñas (notificación in-app)
+          if (nuevasResenas > 0)
+            GestureDetector(
+              onTap: _controller.marcarResenasVistas,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withOpacity(0.15),
+                  border: Border.all(color: Colors.amber),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.notifications_active, color: Colors.amber),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tienes $nuevasResenas nueva${nuevasResenas == 1 ? '' : 's'} calificación${nuevasResenas == 1 ? '' : 'es'} recibida${nuevasResenas == 1 ? '' : 's'} ⭐',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    const Icon(Icons.close, size: 18, color: Colors.amber),
+                  ],
+                ),
+              ),
+            ),
+
           // Info del negocio
           Card(
             color: isDark ? Colors.grey[900] : Colors.white,
@@ -168,6 +199,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               childAspectRatio: 1.5,
               children: [
                 _buildStatCard(
+                  icon: Icons.visibility,
+                  color: Colors.blue,
+                  label: 'Vistas',
+                  value: '${stats['totalVistas'] ?? 0}',
+                  isDark: isDark,
+                ),
+                _buildStatCard(
                   icon: Icons.favorite,
                   color: Colors.red,
                   label: 'Favoritos',
@@ -179,13 +217,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: Colors.amber,
                   label: 'Reseñas',
                   value: '${stats['totalResenas'] ?? 0}',
-                  isDark: isDark,
-                ),
-                _buildStatCard(
-                  icon: Icons.restaurant_menu,
-                  color: primaryColor,
-                  label: 'Platillos',
-                  value: '${stats['totalProductos'] ?? 0}',
                   isDark: isDark,
                 ),
                 _buildStatCard(
@@ -209,7 +240,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 24),
 
-          // Botón de acceso al menú
+          // Botones de acción
+          Text(
+            'Herramientas',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
+          ),
+          const SizedBox(height: 8),
+
           ElevatedButton.icon(
             icon: const Icon(Icons.edit),
             label: const Text('Gestionar Menú'),
@@ -224,6 +261,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 context,
                 MaterialPageRoute(builder: (_) => const MenuGestionScreen()),
               ).then((_) => _controller.cargarDashboard());
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          OutlinedButton.icon(
+            icon: const Icon(Icons.today),
+            label: const Text('Gestión de Disponibilidad'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: BorderSide(color: primaryColor),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DisponibilidadScreen()),
+              ).then((_) => _controller.cargarDashboard());
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          OutlinedButton.icon(
+            icon: const Icon(Icons.bar_chart),
+            label: const Text('Ver Estadísticas Detalladas'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: primaryColor,
+              side: BorderSide(color: primaryColor),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const EstadisticasScreen()),
+              );
             },
           ),
         ],

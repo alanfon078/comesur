@@ -35,6 +35,9 @@ router.get('/filtrar', filtrarLimiter, negocioController.filtrarComida);
 // Rutas protegidas para dueños de negocios
 router.get('/mio', duenoLimiter, verifyToken, esDueno, negocioController.obtenerMiNegocio);
 router.get('/:id/dashboard', duenoLimiter, verifyToken, esDueno, negocioController.obtenerDashboard);
+router.get('/:id/estadisticas', duenoLimiter, verifyToken, esDueno, negocioController.obtenerEstadisticas);
+router.patch('/:id/horario', duenoLimiter, verifyToken, esDueno, negocioController.actualizarHorario);
+router.patch('/:id/menu-del-dia', duenoLimiter, verifyToken, esDueno, negocioController.actualizarMenuDelDia);
 router.post('/:id/productos', duenoLimiter, verifyToken, esDueno, negocioController.agregarProducto);
 router.put('/:id/productos/:productoId', duenoLimiter, verifyToken, esDueno, negocioController.actualizarProducto);
 router.delete('/:id/productos/:productoId', duenoLimiter, verifyToken, esDueno, negocioController.eliminarProducto);
