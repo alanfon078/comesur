@@ -63,12 +63,12 @@ class AuthController extends ChangeNotifier {
     _iniciarCarga();
 
     try {
-      // 1. Es obligatorio inicializar la instancia en la versión 7.0+ con el serverClientId
+      // 1. Es obligatorio inicializar la instancia en la versión 7.0+
       await GoogleSignIn.instance.initialize(
         serverClientId: '848983535562-323a73ld70nblqraekqgmh7d8ng9i8kg.apps.googleusercontent.com',
       );
 
-      // 2. authenticate() reemplaza a signIn(). Si el usuario cancela, lanzará una excepción.
+      // 2. authenticate() reemplaza a signIn().
       final googleUser = await GoogleSignIn.instance.authenticate();
 
       // 3. Obtenemos las credenciales
@@ -92,7 +92,6 @@ class AuthController extends ChangeNotifier {
 
       return _procesarRespuestaAuth(response);
     } catch (_) {
-      // Si el usuario cierra el modal de Google, caerá en este catch.
       error = 'Error al iniciar sesión con Google o cancelado por el usuario.';
       isLoading = false;
       notifyListeners();

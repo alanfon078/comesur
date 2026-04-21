@@ -12,7 +12,12 @@
           "package_name": "com.example.ComeSUR"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "848983535562-323a73ld70nblqraekqgmh7d8ng9i8kg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC8JT_so6oPfbutrNOYrPYIVn-MUfzWjzE"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "848983535562-323a73ld70nblqraekqgmh7d8ng9i8kg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
