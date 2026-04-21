@@ -25,4 +25,14 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-module.exports = { verifyToken };
+const esDueno = (req, res, next) => {
+    if (req.usuario.rol !== 'Dueño') {
+        return res.status(403).json({
+            success: false,
+            error: { message: 'Acceso denegado. Solo propietarios de negocios pueden realizar esta acción.', code: 'FORBIDDEN' }
+        });
+    }
+    next();
+};
+
+module.exports = { verifyToken, esDueno };
