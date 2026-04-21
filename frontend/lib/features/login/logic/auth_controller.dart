@@ -13,8 +13,6 @@ class AuthController extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
-
   // LOGIN CON CORREO Y CONTRASEÑA
   Future<bool> login(String correo, String contrasena) async {
     _iniciarCarga();
@@ -22,10 +20,10 @@ class AuthController extends ChangeNotifier {
     try {
       final response = await http
           .post(
-            Uri.parse('$_baseUrl/auth/login'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'correo': correo, 'contrasena': contrasena}),
-          )
+        Uri.parse('$_baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'correo': correo, 'contrasena': contrasena}),
+      )
           .timeout(const Duration(seconds: 10));
 
       return _procesarRespuestaAuth(response);
@@ -44,10 +42,10 @@ class AuthController extends ChangeNotifier {
     try {
       final response = await http
           .post(
-            Uri.parse('$_baseUrl/auth/register'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'nombre': nombre, 'correo': correo, 'contrasena': contrasena}),
-          )
+        Uri.parse('$_baseUrl/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'nombre': nombre, 'correo': correo, 'contrasena': contrasena}),
+      )
           .timeout(const Duration(seconds: 10));
 
       return _procesarRespuestaAuth(response);
@@ -59,19 +57,18 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  // LOGIN CON GOOGLE
+  // LOGIN CON GOOGLE (CORREGIDO PARA V7+)
   Future<bool> loginConGoogle() async {
     _iniciarCarga();
 
     try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        error = null;
-        isLoading = false;
-        notifyListeners();
-        return false;
-      }
+      // 1. Es obligatorio inicializar la instancia en la versión 7.0+
+      await GoogleSignIn.instance.initialize();
 
+      // 2. authenticate() reemplaza a signIn(). Si el usuario cancela, lanzará una excepción.
+      final googleUser = await GoogleSignIn.instance.authenticate();
+
+      // 3. Obtenemos las credenciales
       final auth = await googleUser.authentication;
       final idToken = auth.idToken;
 
@@ -84,15 +81,16 @@ class AuthController extends ChangeNotifier {
 
       final response = await http
           .post(
-            Uri.parse('$_baseUrl/auth/google'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'idToken': idToken}),
-          )
+        Uri.parse('$_baseUrl/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': idToken}),
+      )
           .timeout(const Duration(seconds: 15));
 
       return _procesarRespuestaAuth(response);
     } catch (_) {
-      error = 'Error al iniciar sesión con Google.';
+      // Si el usuario cierra el modal de Google, caerá en este catch.
+      error = 'Error al iniciar sesión con Google o cancelado por el usuario.';
       isLoading = false;
       notifyListeners();
       return false;
@@ -125,10 +123,10 @@ class AuthController extends ChangeNotifier {
 
       final response = await http
           .post(
-            Uri.parse('$_baseUrl/auth/facebook'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'accessToken': accessToken}),
-          )
+        Uri.parse('$_baseUrl/auth/facebook'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'accessToken': accessToken}),
+      )
           .timeout(const Duration(seconds: 15));
 
       return _procesarRespuestaAuth(response);
