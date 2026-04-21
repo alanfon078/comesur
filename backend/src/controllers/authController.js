@@ -30,14 +30,8 @@ const register = async (req, res) => {
             error: { message: 'Nombre, correo y contraseña son requeridos', code: 'VALIDATION_ERROR' }
         });
     }
-    if (!correo || typeof correo !== 'string' || correo.length > 120) {
-        return res.status(400).json({
-            success: false,
-            error: { message: 'Formato de correo inválido', code: 'VALIDATION_ERROR' }
-        });
-    }
-    const atIndex = correo.indexOf('@');
-    if (atIndex <= 0 || atIndex === correo.length - 1 || !correo.slice(atIndex).includes('.')) {
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!correo || typeof correo !== 'string' || correo.length > 120 || !EMAIL_REGEX.test(correo)) {
         return res.status(400).json({
             success: false,
             error: { message: 'Formato de correo inválido', code: 'VALIDATION_ERROR' }
@@ -104,6 +98,13 @@ const login = async (req, res) => {
         }
 
         const usuarioDB = rows[0];
+        // Bloquear login con contraseña para cuentas creadas vía OAuth
+        if (!usuarioDB.contrasena) {
+            return res.status(401).json({
+                success: false,
+                error: { message: 'Esta cuenta fue creada con Google o Facebook. Por favor, inicia sesión con el método correspondiente.', code: 'OAUTH_ACCOUNT' }
+            });
+        }
         const valida = await bcrypt.compare(contrasena, usuarioDB.contrasena);
         if (!valida) {
             return res.status(401).json({
@@ -156,10 +157,10 @@ const loginGoogle = async (req, res) => {
             // Vincular google_id si no estaba vinculado
             await db.execute('UPDATE Usuario SET google_id = ? WHERE id = ?', [googleId, usuario.id]);
         } else {
-            // Crear cuenta nueva (sin contraseña)
+            // Crear cuenta nueva (sin contraseña - cuenta OAuth, no permite login con contraseña)
             const [result] = await db.execute(
-                'INSERT INTO Usuario (nombre, correo, contrasena, rol, google_id) VALUES (?, ?, ?, ?, ?)',
-                [name, email, '', 'Estudiante', googleId]
+                'INSERT INTO Usuario (nombre, correo, contrasena, rol, google_id) VALUES (?, ?, NULL, ?, ?)',
+                [name, email, 'Estudiante', googleId]
             );
             usuario = { id: result.insertId, nombre: name, correo: email, rol: 'Estudiante' };
         }
@@ -211,8 +212,8 @@ const loginFacebook = async (req, res) => {
             await db.execute('UPDATE Usuario SET facebook_id = ? WHERE id = ?', [facebookId, usuario.id]);
         } else {
             const [result] = await db.execute(
-                'INSERT INTO Usuario (nombre, correo, contrasena, rol, facebook_id) VALUES (?, ?, ?, ?, ?)',
-                [name, email, '', 'Estudiante', facebookId]
+                'INSERT INTO Usuario (nombre, correo, contrasena, rol, facebook_id) VALUES (?, ?, NULL, ?, ?)',
+                [name, email, 'Estudiante', facebookId]
             );
             usuario = { id: result.insertId, nombre: name, correo: email, rol: 'Estudiante' };
         }

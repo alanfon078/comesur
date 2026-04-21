@@ -113,6 +113,7 @@ class BusinessDetailController extends ChangeNotifier {
           body: jsonEncode({'negocio_id': negocioId}),
         ).timeout(const Duration(seconds: 10));
 
+        // 201 = favorito añadido, 409 = ya era favorito (ambos indican que esFavorito = true)
         if (response.statusCode == 201 || response.statusCode == 409) {
           esFavorito = true;
           notifyListeners();

@@ -31,8 +31,9 @@ class ResenaController extends ChangeNotifier {
       } else {
         resenaExistente = null;
       }
-    } catch (_) {
+    } catch (e) {
       resenaExistente = null;
+      debugPrint('Error al cargar reseña: $e');
     }
 
     isLoading = false;
@@ -75,8 +76,9 @@ class ResenaController extends ChangeNotifier {
         notifyListeners();
         return false;
       }
-    } catch (_) {
+    } catch (e) {
       error = 'No se pudo conectar al servidor';
+      debugPrint('Error al guardar reseña: $e');
       isLoading = false;
       notifyListeners();
       return false;
