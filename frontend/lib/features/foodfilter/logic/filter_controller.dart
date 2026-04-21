@@ -32,9 +32,17 @@ class FilterController extends ChangeNotifier {
             if (presupuestoTxt.isNotEmpty) 'presupuesto': presupuestoTxt,
           },
         );
+        debugPrint('====== PRUEBA DE FILTRO ======');
+        debugPrint('URL solicitada: $uri');
 
-        final response =
-            await http.get(uri).timeout(const Duration(seconds: 10));
+        debugPrint('====== PRUEBA DE FILTRO ======');
+        debugPrint('URL solicitada: $uri');
+
+        final response = await http.get(uri).timeout(const Duration(seconds: 10));
+
+        debugPrint('Status Code: ${response.statusCode}');
+        debugPrint('Respuesta del servidor: ${response.body}');
+        debugPrint('==============================');
 
         if (response.statusCode == 200) {
           final body = jsonDecode(response.body);
