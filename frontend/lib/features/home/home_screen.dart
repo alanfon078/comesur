@@ -6,6 +6,7 @@ import '../favoritos/screens/favoritos_screen.dart';
 import '../perfil/screens/perfil_screen.dart';
 import '../negocio/screens/dashboard_screen.dart';
 import '../negocio/screens/menu_gestion_screen.dart';
+import '../negocio/logic/dashboard_controller.dart';
 import '../../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -20,6 +21,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _rol;
   bool _cargandoRol = true;
 
+  // Controlador de dashboard para detectar nuevas reseñas (solo para Dueños)
+  DashboardController? _dashboardController;
+
   @override
   void initState() {
     super.initState();
@@ -33,7 +37,25 @@ class _HomeScreenState extends State<HomeScreen> {
         _rol = datos?['rol'];
         _cargandoRol = false;
       });
+
+      // Inicializar el controller de dashboard para dueños
+      if (_rol == 'Dueño') {
+        _dashboardController = DashboardController();
+        _dashboardController!.addListener(_onDashboardUpdate);
+        _dashboardController!.cargarDashboard();
+      }
     }
+  }
+
+  void _onDashboardUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _dashboardController?.removeListener(_onDashboardUpdate);
+    _dashboardController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -46,24 +68,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final esDueno = _rol == 'Dueño';
     final primaryColor = Theme.of(context).primaryColor;
+    final nuevasResenas = _dashboardController?.nuevasResenas ?? 0;
 
     final screens = esDueno
         ? const <Widget>[DashboardScreen(), MenuGestionScreen(), PerfilScreen()]
         : const <Widget>[FilterScreen(), FavoritosScreen(), PerfilScreen()];
 
     final navItems = esDueno
-        ? const <BottomNavigationBarItem>[
+        ? <BottomNavigationBarItem>[
             BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
+              icon: Badge(
+                isLabelVisible: nuevasResenas > 0,
+                label: Text('$nuevasResenas'),
+                child: const Icon(Icons.dashboard_outlined),
+              ),
+              activeIcon: Badge(
+                isLabelVisible: nuevasResenas > 0,
+                label: Text('$nuevasResenas'),
+                child: const Icon(Icons.dashboard),
+              ),
               label: 'Dashboard',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.restaurant_menu_outlined),
               activeIcon: Icon(Icons.restaurant_menu),
               label: 'Menú',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Perfil',
@@ -93,7 +124,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        onTap: (i) {
+          setState(() => _currentIndex = i);
+          // Al tocar Dashboard, limpiar badge de notificaciones
+          if (esDueno && i == 0 && nuevasResenas > 0) {
+            _dashboardController?.marcarResenasVistas();
+          }
+        },
         selectedItemColor: primaryColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
@@ -102,4 +139,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

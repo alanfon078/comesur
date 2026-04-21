@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../logic/menu_controller.dart';
+import 'business_detail_screen.dart';
 
 class MenuGestionScreen extends StatefulWidget {
   const MenuGestionScreen({super.key});
@@ -162,6 +163,22 @@ class _MenuGestionScreenState extends State<MenuGestionScreen> {
         title: const Text('Gestión de Menú', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
+          if (_controller.negocioId != null)
+            IconButton(
+              icon: const Icon(Icons.preview_outlined),
+              tooltip: 'Vista previa',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BusinessDetailScreen(
+                      negocioId: _controller.negocioId!,
+                      negocioNombre: 'Vista previa',
+                    ),
+                  ),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Actualizar',

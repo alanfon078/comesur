@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../services/auth_service.dart';
 
@@ -12,6 +13,11 @@ class DashboardController extends ChangeNotifier {
   String? error;
   Map<String, dynamic>? negocio;
   Map<String, dynamic>? estadisticas;
+
+  // Notificaciones
+  int nuevasResenas = 0;
+
+  static const String _prefKeyResenas = 'dashboard_last_resenas_';
 
   // Carga el negocio del dueño autenticado junto con las estadísticas del dashboard
   Future<void> cargarDashboard() async {
@@ -56,6 +62,9 @@ class DashboardController extends ChangeNotifier {
 
       if (dashRes.statusCode == 200) {
         estadisticas = jsonDecode(dashRes.body)['data'] as Map<String, dynamic>;
+
+        // Detectar nuevas reseñas para notificación in-app
+        await _verificarNuevasResenas(negocioData['id'] as int);
       }
     } catch (e) {
       error = 'No se pudo conectar al servidor';
@@ -63,6 +72,27 @@ class DashboardController extends ChangeNotifier {
     }
 
     isLoading = false;
+    notifyListeners();
+  }
+
+  // Verifica si hay nuevas reseñas desde la última visita al dashboard
+  Future<void> _verificarNuevasResenas(int negocioId) async {
+    final totalActual = (estadisticas?['totalResenas'] as num?)?.toInt() ?? 0;
+    final prefs = await SharedPreferences.getInstance();
+    final key = '$_prefKeyResenas$negocioId';
+    final lastSeen = prefs.getInt(key) ?? totalActual;
+
+    nuevasResenas = (totalActual - lastSeen).clamp(0, 999);
+  }
+
+  // Marca las reseñas actuales como "vistas" y resetea el contador
+  Future<void> marcarResenasVistas() async {
+    if (negocio == null) return;
+    final negocioId = negocio!['id'] as int;
+    final totalActual = (estadisticas?['totalResenas'] as num?)?.toInt() ?? 0;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('$_prefKeyResenas$negocioId', totalActual);
+    nuevasResenas = 0;
     notifyListeners();
   }
 }
