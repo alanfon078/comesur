@@ -14,7 +14,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "848983535562-323a73ld70nblqraekqgmh7d8ng9i8kg.apps.googleusercontent.com",
+          "client_id": "848983535562-r67iaievoh7t1ia5r02v7n90b623vg4t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ComeSUR",
+            "certificate_hash": "85e5e6da718c34356dc14d0667b50933d2b37b4a"
+          }
+        },
+        {
+          "client_id": "848983535562-hsji2g6e8h7v13njkpnqv4h6647gtngh.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
