@@ -1,12 +1,13 @@
 // Autor: Alan Yael Fonseca Ruiz
 
+import 'package:ComeSUR/services/api_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../services/auth_service.dart';
 
-const String _baseUrl = 'http://10.0.2.2:3000/api';
+const String _baseUrl = ApiConstants.baseUrl;
 
 class DashboardController extends ChangeNotifier {
   bool isLoading = false;

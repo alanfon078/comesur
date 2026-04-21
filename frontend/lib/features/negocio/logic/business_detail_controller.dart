@@ -3,7 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:convert';
 import '../../../services/auth_service.dart';
+import '../../../services/api_constants.dart';
+
 
 class BusinessDetailController extends ChangeNotifier {
   bool isLoading = false;
@@ -27,7 +30,7 @@ class BusinessDetailController extends ChangeNotifier {
     int intentos = 0;
     while (intentos < maxAttempts) {
       try {
-        final uri = Uri.parse('http://10.0.2.2:3000/api/negocios/$negocioId');
+        final uri = Uri.parse('${ApiConstants.baseUrl}/negocios/$negocioId');
         final response = await http
             .get(uri, headers: headers)
             .timeout(const Duration(seconds: 10));
@@ -71,7 +74,7 @@ class BusinessDetailController extends ChangeNotifier {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3000/api/favoritos'),
+        Uri.parse('http://192.168.137.1:3000/api/favoritos'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 

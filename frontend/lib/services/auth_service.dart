@@ -10,19 +10,21 @@ class AuthService {
   static const String _keyId = 'auth_id';
 
   // Guardar datos de sesión tras login exitoso
+// Guardar datos de sesión tras login exitoso
   static Future<void> guardarSesion({
     required String token,
     required int id,
     required String nombre,
     required String correo,
-    required String rol,
+    String? rol, // Se cambia a opcional (String?)
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyToken, token);
     await prefs.setInt(_keyId, id);
     await prefs.setString(_keyNombre, nombre);
     await prefs.setString(_keyCorreo, correo);
-    await prefs.setString(_keyRol, rol);
+    // Si el rol viene nulo, le asignamos 'Cliente' por defecto
+    await prefs.setString(_keyRol, rol ?? 'Cliente');
   }
 
   // Obtener el JWT almacenado

@@ -3,6 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:convert';
+import '../../../services/auth_service.dart';
+import '../../../services/api_constants.dart';
+
 
 class FilterController extends ChangeNotifier {
   bool isLoading = false;
@@ -22,9 +26,7 @@ class FilterController extends ChangeNotifier {
     int intentos = 0;
     while (intentos < maxAttempts) {
       try {
-        // Usamos 10.0.2.2 en lugar de localhost para el emulador de Android
-        final uri =
-            Uri.parse('http://10.0.2.2:3000/api/negocios/filtrar').replace(
+        final uri = Uri.parse('${ApiConstants.baseUrl}/negocios/filtrar').replace(
           queryParameters: {
             if (tipoComida.isNotEmpty) 'tipoComida': tipoComida,
             if (presupuestoTxt.isNotEmpty) 'presupuesto': presupuestoTxt,

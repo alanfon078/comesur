@@ -6,8 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'dart:convert';
 import '../../../services/auth_service.dart';
+import '../../../services/api_constants.dart';
 
-const String _baseUrl = 'http://192.168.100.5:3000/api';
+const String _baseUrl = ApiConstants.baseUrl;
 
 class AuthController extends ChangeNotifier {
   bool isLoading = false;
@@ -62,8 +63,10 @@ class AuthController extends ChangeNotifier {
     _iniciarCarga();
 
     try {
-      // 1. Es obligatorio inicializar la instancia en la versión 7.0+
-      await GoogleSignIn.instance.initialize();
+      // 1. Es obligatorio inicializar la instancia en la versión 7.0+ con el serverClientId
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '848983535562-323a73ld70nblqraekqgmh7d8ng9i8kg.apps.googleusercontent.com',
+      );
 
       // 2. authenticate() reemplaza a signIn(). Si el usuario cancela, lanzará una excepción.
       final googleUser = await GoogleSignIn.instance.authenticate();
