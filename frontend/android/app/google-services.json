@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "848983535562",
+    "project_id": "comesur-4e6ca",
+    "storage_bucket": "comesur-4e6ca.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:848983535562:android:7f5aeec07c96e152aea933",
+        "android_client_info": {
+          "package_name": "com.example.ComeSUR"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8JT_so6oPfbutrNOYrPYIVn-MUfzWjzE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
