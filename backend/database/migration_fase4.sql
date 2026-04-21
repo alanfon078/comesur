@@ -8,7 +8,7 @@ USE comesur_db;
 
 -- 1. Contador de vistas de cada negocio (para el dashboard del dueño)
 ALTER TABLE Negocio
-    ADD COLUMN IF NOT EXISTS totalVistas INT DEFAULT 0;
+    ADD COLUMN totalVistas INT DEFAULT 0;
 
 -- Nuevos endpoints REST disponibles (requieren rol 'Dueño' + JWT):
 --   GET    /api/negocios/mio                                         -> Obtener mi negocio + menú + menuDelDia
