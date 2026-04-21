@@ -1,7 +1,7 @@
 // Autor: Alan Yael Fonseca Ruiz
 
 import 'package:flutter/material.dart';
-import '../logic/auth_controller.dart';
+import 'logic/auth_controller.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -119,8 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
-
-                // Correo
+// Correo
                 const Text('USUARIO / CORREO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -141,6 +140,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (!emailRegex.hasMatch(v)) return 'Correo inválido';
                     return null;
                   },
+                ),
+
+                const SizedBox(height: 16),
+
+                // Contraseña
+                const Text('CONTRASEÑA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _contrasenaCtrl, // Faltaba el controlador para la contraseña
                   obscureText: _obscure,
                   decoration: InputDecoration(
                     hintText: '******',
