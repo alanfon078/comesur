@@ -1,7 +1,7 @@
 // Autor: Alan Yael Fonseca Ruiz
 
 import 'package:flutter/material.dart';
-import '../logic/auth_controller.dart';
+import 'logic/auth_controller.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -114,6 +114,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (!emailRegex.hasMatch(v)) return 'Correo inválido';
                     return null;
                   },
+                ), // <--- ESTE ES EL PARÉNTESIS QUE FALTABA
+
+                const SizedBox(height: 20),
+
+                // Contraseña (Añadí el título que también faltaba)
+                const Text('CONTRASEÑA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _contrasenaCtrl,
@@ -148,10 +154,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: _controller.isLoading ? null : _registrar,
                   child: _controller.isLoading
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                        )
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
                       : const Text('CREAR CUENTA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ],
