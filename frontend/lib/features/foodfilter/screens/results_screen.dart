@@ -177,7 +177,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('Modificar Filtros'),
+              label: const Text('Modificar Filtros'),
             ),
           ],
         ),
