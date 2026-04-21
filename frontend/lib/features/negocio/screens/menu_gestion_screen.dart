@@ -1,6 +1,6 @@
 // Autor: Alan Yael Fonseca Ruiz
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MenuController;
 import '../logic/menu_controller.dart';
 import 'business_detail_screen.dart';
 

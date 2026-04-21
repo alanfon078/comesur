@@ -1,5 +1,3 @@
-import androidx.compose.foundation.text2.input.delete
-import androidx.compose.ui.layout.layout
 
 buildscript {
     repositories {

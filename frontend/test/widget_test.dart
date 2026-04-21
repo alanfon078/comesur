@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:frontend/main.dart'; // Asegúrate de que 'frontend' sea el nombre en tu pubspec.yaml
+import 'package:ComeSUR/main.dart';
 
 void main() {
   testWidgets('Smoke test para ComeSurApp', (WidgetTester tester) async {
