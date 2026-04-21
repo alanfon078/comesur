@@ -137,17 +137,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'El correo es requerido';
-                    if (!v.contains('@') || !v.contains('.')) return 'Correo inválido';
+                    final emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+                    if (!emailRegex.hasMatch(v)) return 'Correo inválido';
                     return null;
                   },
-                ),
-                const SizedBox(height: 20),
-
-                // Contraseña
-                const Text('CONTRASEÑA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _contrasenaCtrl,
                   obscureText: _obscure,
                   decoration: InputDecoration(
                     hintText: '******',

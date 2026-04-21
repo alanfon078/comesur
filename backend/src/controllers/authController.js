@@ -8,6 +8,7 @@ const logger = require('../config/logger');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'comesur_secret_key';
 const JWT_EXPIRES_IN = '24h';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -30,7 +31,6 @@ const register = async (req, res) => {
             error: { message: 'Nombre, correo y contraseña son requeridos', code: 'VALIDATION_ERROR' }
         });
     }
-    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!correo || typeof correo !== 'string' || correo.length > 120 || !EMAIL_REGEX.test(correo)) {
         return res.status(400).json({
             success: false,
