@@ -1,11 +1,9 @@
 // Autor: Alan Yael Fonseca Ruiz
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'results_screen.dart';
 import '../logic/search_history_service.dart';
-import '../../../services/api_constants.dart';
+import '../logic/filter_controller.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({super.key});
@@ -18,9 +16,10 @@ class _FilterScreenState extends State<FilterScreen> {
   final TextEditingController _comidaController = TextEditingController();
   final TextEditingController _presupuestoController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final SearchHistoryService _historialService = SearchHistoryService();
 
-  bool _isLoading = false;
+  final SearchHistoryService _historialService = SearchHistoryService();
+  final FilterController _filterController = FilterController(); // Instancia del controlador
+
   List<Map<String, String>> _historial = [];
 
   @override
@@ -47,93 +46,54 @@ class _FilterScreenState extends State<FilterScreen> {
 
   Future<void> _aplicarFiltros() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
       final tipoComida = _comidaController.text;
       final presupuesto = _presupuestoController.text;
 
-      // Guardar en historial
+      // Guardar en historial localmente
       await _historialService.guardarBusqueda(tipoComida, presupuesto);
 
-      int intentos = 0;
-      const maxAttempts = 2;
-      List<dynamic> resultados = [];
-      String? errorMsg;
-      String? errorCode;
+      // Delegar la petición y la lógica de reintentos al controlador
+      await _filterController.aplicarFiltros(tipoComida, presupuesto);
 
-      while (intentos < maxAttempts) {
-        try {
-          final uri = Uri.parse('${ApiConstants.baseUrl}/negocios/filtrar').replace(
-            queryParameters: {
-              if (tipoComida.isNotEmpty) 'tipoComida': tipoComida,
-              if (presupuesto.isNotEmpty) 'presupuesto': presupuesto,
+      // Verificamos que el widget siga montado después del await
+      if (!mounted) return;
+
+      // Manejar el resultado devuelto por el controlador
+      if (_filterController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_filterController.error!),
+            backgroundColor: Colors.red[700],
+            action: SnackBarAction(
+              label: 'Reintentar',
+              textColor: Colors.white,
+              onPressed: _aplicarFiltros,
+            ),
+          ),
+        );
+      } else {
+        // Éxito: Actualizar historial y navegar a resultados
+        _cargarHistorial();
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                ResultsScreen(resultados: _filterController.resultados),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
             },
-          );
-
-          final response = await http.get(uri).timeout(const Duration(seconds: 10));
-
-          if (response.statusCode == 200) {
-            final body = jsonDecode(response.body);
-            resultados = body['data'] as List<dynamic>;
-            errorMsg = null;
-            break;
-          } else if (response.statusCode == 404) {
-            resultados = [];
-            errorMsg = null;
-            break;
-          } else {
-            final body = jsonDecode(response.body);
-            errorCode = body['error']?['code'] ?? 'ERROR_${response.statusCode}';
-            final mensaje = body['error']?['message'] ?? 'Error en el servidor';
-            errorMsg = '$mensaje (Código: $errorCode)';
-            break;
-          }
-        } catch (e) {
-          intentos++;
-          if (intentos >= maxAttempts) {
-            errorMsg = 'Error de conexión con el servidor. Verifica que el servidor esté encendido.';
-            errorCode = 'CONNECTION_ERROR';
-          } else {
-            await Future.delayed(const Duration(seconds: 1));
-          }
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-
-        if (errorMsg != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMsg),
-              backgroundColor: Colors.red[700],
-              action: SnackBarAction(
-                label: 'Reintentar',
-                textColor: Colors.white,
-                onPressed: _aplicarFiltros,
-              ),
-            ),
-          );
-        } else {
-          // Actualizar historial tras búsqueda exitosa
-          _cargarHistorial();
-          Navigator.push(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  ResultsScreen(resultados: resultados),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-            ),
-          );
-        }
+          ),
+        );
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _comidaController.dispose();
+    _presupuestoController.dispose();
+    _filterController.dispose(); // Es importante liberar el controlador de memoria
+    super.dispose();
   }
 
   @override
@@ -204,24 +164,29 @@ class _FilterScreenState extends State<FilterScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Botón Aplicar Filtros con indicador de carga
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                onPressed: _isLoading ? null : _aplicarFiltros,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text('APLICAR FILTROS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              // Botón Aplicar Filtros reactivo al estado del controlador usando ListenableBuilder
+              ListenableBuilder(
+                listenable: _filterController,
+                builder: (context, _) {
+                  return ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    onPressed: _filterController.isLoading ? null : _aplicarFiltros,
+                    child: _filterController.isLoading
+                        ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                        : const Text('APLICAR FILTROS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  );
+                },
               ),
 
               // --- Historial de Búsquedas ---
@@ -268,12 +233,5 @@ class _FilterScreenState extends State<FilterScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _comidaController.dispose();
-    _presupuestoController.dispose();
-    super.dispose();
   }
 }
