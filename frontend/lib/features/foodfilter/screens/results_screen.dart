@@ -36,7 +36,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
       setState(() {
         _favoritos.clear();
         for (final f in _favoritosController.favoritos) {
-          _favoritos.add(f['negocio_id'] as int);
+          // CORRECCIÓN: Parseo seguro en caso de que el ID venga como String
+          final dynamic idRaw = f['negocio_id'];
+          final int? id = idRaw is int ? idRaw : int.tryParse(idRaw?.toString() ?? '');
+          if (id != null) {
+            _favoritos.add(id);
+          }
         }
       });
     }
@@ -57,24 +62,25 @@ class _ResultsScreenState extends State<ResultsScreen> {
       ahora = true;
     }
 
-    if (mounted) {
-      setState(() {
-        _loadingFavoritos.remove(negocioId);
-        if (ok) {
-          if (ahora) {
-            _favoritos.add(negocioId);
-          } else {
-            _favoritos.remove(negocioId);
-          }
-        }
-      });
+    // CORRECCIÓN: Evitar problemas al usar el contexto tras un 'await'
+    if (!mounted) return;
 
+    setState(() {
+      _loadingFavoritos.remove(negocioId);
       if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(ahora ? 'Agregado a favoritos' : 'Quitado de favoritos'),
-          duration: const Duration(seconds: 1),
-        ));
+        if (ahora) {
+          _favoritos.add(negocioId);
+        } else {
+          _favoritos.remove(negocioId);
+        }
       }
+    });
+
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ahora ? 'Agregado a favoritos' : 'Quitado de favoritos'),
+        duration: const Duration(seconds: 1),
+      ));
     }
   }
 
@@ -96,12 +102,11 @@ class _ResultsScreenState extends State<ResultsScreen> {
       body: widget.isLoading
           ? _buildSkeletonList(isDark)
           : widget.resultados.isEmpty
-              ? _buildEmptyState(context)
-              : _buildResultList(context, isDark),
+          ? _buildEmptyState(context)
+          : _buildResultList(context, isDark),
     );
   }
 
-  // --- Skeleton Loader para la lista ---
   Widget _buildSkeletonList(bool isDark) {
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
@@ -133,11 +138,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          height: 14,
-                          width: double.infinity,
-                          color: Colors.white,
-                        ),
+                        Container(height: 14, width: double.infinity, color: Colors.white),
                         const SizedBox(height: 8),
                         Container(height: 12, width: 150, color: Colors.white),
                         const SizedBox(height: 8),
@@ -154,7 +155,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
     );
   }
 
-  // --- Empty State personalizado ---
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
@@ -185,14 +185,17 @@ class _ResultsScreenState extends State<ResultsScreen> {
     );
   }
 
-  // --- Lista de resultados ---
   Widget _buildResultList(BuildContext context, bool isDark) {
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
       itemCount: widget.resultados.length,
       itemBuilder: (context, index) {
         final item = widget.resultados[index];
-        final negocioId = item['negocio_id'] as int?;
+
+        // CORRECCIÓN: Parseo seguro para el ID del negocio también aquí
+        final dynamic idRaw = item['negocio_id'];
+        final int? negocioId = idRaw is int ? idRaw : int.tryParse(idRaw?.toString() ?? '');
+
         final esFavorito = negocioId != null && _favoritos.contains(negocioId);
         final cargandoFav = negocioId != null && _loadingFavoritos.contains(negocioId);
 
@@ -210,9 +213,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         BusinessDetailScreen(
-                      negocioId: negocioId,
-                      negocioNombre: item['negocio'] ?? 'Negocio',
-                    ),
+                          negocioId: negocioId,
+                          negocioNombre: item['negocio'] ?? 'Negocio',
+                        ),
                     transitionsBuilder:
                         (context, animation, secondaryAnimation, child) {
                       return SlideTransition(
@@ -234,7 +237,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  // Ícono de restaurante
                   Container(
                     padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
@@ -244,7 +246,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     child: Icon(Icons.restaurant, color: Theme.of(context).primaryColor),
                   ),
                   const SizedBox(width: 12),
-                  // Info del platillo
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +270,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       ],
                     ),
                   ),
-                  // Precio y botón corazón
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -285,18 +285,18 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       if (negocioId != null)
                         cargandoFav
                             ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                             : GestureDetector(
-                                onTap: () => _toggleFavorito(negocioId),
-                                child: Icon(
-                                  esFavorito ? Icons.favorite : Icons.favorite_border,
-                                  color: esFavorito ? Colors.red : Colors.grey,
-                                  size: 22,
-                                ),
-                              ),
+                          onTap: () => _toggleFavorito(negocioId),
+                          child: Icon(
+                            esFavorito ? Icons.favorite : Icons.favorite_border,
+                            color: esFavorito ? Colors.red : Colors.grey,
+                            size: 22,
+                          ),
+                        ),
                     ],
                   ),
                 ],
