@@ -38,6 +38,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+    dependencies {
+        // Importa el BoM de Firebase
+        implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+        implementation("com.google.firebase:firebase-analytics")
+
+    }
 }
 
 flutter {
