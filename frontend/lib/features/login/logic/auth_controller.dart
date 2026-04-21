@@ -65,7 +65,7 @@ class AuthController extends ChangeNotifier {
     try {
       // 1. Es obligatorio inicializar la instancia en la versión 7.0+
       await GoogleSignIn.instance.initialize(
-        serverClientId: '848983535562-323a73ld70nblqraekqgmh7d8ng9i8kg.apps.googleusercontent.com',
+        serverClientId: '848983535562-hsji2g6e8h7v13njkpnqv4h6647gtngh.apps.googleusercontent.com',
       );
 
       // 2. authenticate() reemplaza a signIn().
