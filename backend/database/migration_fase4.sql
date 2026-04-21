@@ -1,0 +1,20 @@
+-- ============================================================
+-- ComeSur - Migración Fase 4: Business Tools
+-- Autor: Alan Yael Fonseca Ruiz
+-- Fecha: 2026-04-21
+-- ============================================================
+-- No se requieren cambios en la base de datos para la Fase 4.
+-- El esquema existente ya soporta todas las funcionalidades:
+--   - Negocio.dueno_id vincula el negocio con el dueño (Usuario)
+--   - Producto.disponible controla la disponibilidad de platillos
+--   - Tabla Favorito registra los favoritos de cada negocio
+--   - Tabla Resena registra las calificaciones de cada negocio
+-- ============================================================
+
+-- Nuevos endpoints REST disponibles (requieren rol 'Dueño' + JWT):
+--   GET    /api/negocios/mio                                -> Obtener mi negocio + menú
+--   GET    /api/negocios/:id/dashboard                      -> Estadísticas del negocio
+--   POST   /api/negocios/:id/productos                      -> Agregar platillo
+--   PUT    /api/negocios/:id/productos/:productoId          -> Editar platillo
+--   DELETE /api/negocios/:id/productos/:productoId          -> Eliminar platillo
+--   PATCH  /api/negocios/:id/productos/:productoId/disponibilidad -> Toggle disponibilidad

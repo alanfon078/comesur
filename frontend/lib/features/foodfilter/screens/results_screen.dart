@@ -3,8 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../negocio/screens/business_detail_screen.dart';
+import '../../favoritos/logic/favoritos_controller.dart';
 
-class ResultsScreen extends StatelessWidget {
+class ResultsScreen extends StatefulWidget {
   final List<dynamic> resultados;
   final bool isLoading;
 
@@ -15,6 +16,75 @@ class ResultsScreen extends StatelessWidget {
   });
 
   @override
+  State<ResultsScreen> createState() => _ResultsScreenState();
+}
+
+class _ResultsScreenState extends State<ResultsScreen> {
+  final FavoritosController _favoritosController = FavoritosController();
+  final Set<int> _favoritos = {};
+  final Set<int> _loadingFavoritos = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarFavoritos();
+  }
+
+  Future<void> _cargarFavoritos() async {
+    await _favoritosController.cargarFavoritos();
+    if (mounted) {
+      setState(() {
+        _favoritos.clear();
+        for (final f in _favoritosController.favoritos) {
+          _favoritos.add(f['negocio_id'] as int);
+        }
+      });
+    }
+  }
+
+  Future<void> _toggleFavorito(int negocioId) async {
+    if (_loadingFavoritos.contains(negocioId)) return;
+
+    setState(() => _loadingFavoritos.add(negocioId));
+
+    bool ok;
+    bool ahora;
+    if (_favoritos.contains(negocioId)) {
+      ok = await _favoritosController.eliminarFavorito(negocioId);
+      ahora = false;
+    } else {
+      ok = await _favoritosController.agregarFavorito(negocioId);
+      ahora = true;
+    }
+
+    if (mounted) {
+      setState(() {
+        _loadingFavoritos.remove(negocioId);
+        if (ok) {
+          if (ahora) {
+            _favoritos.add(negocioId);
+          } else {
+            _favoritos.remove(negocioId);
+          }
+        }
+      });
+
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(ahora ? 'Agregado a favoritos' : 'Quitado de favoritos'),
+          duration: const Duration(seconds: 1),
+        ));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _favoritosController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -23,9 +93,9 @@ class ResultsScreen extends StatelessWidget {
         title: const Text('Resultados', style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
-      body: isLoading
+      body: widget.isLoading
           ? _buildSkeletonList(isDark)
-          : resultados.isEmpty
+          : widget.resultados.isEmpty
               ? _buildEmptyState(context)
               : _buildResultList(context, isDark),
     );
@@ -119,9 +189,13 @@ class ResultsScreen extends StatelessWidget {
   Widget _buildResultList(BuildContext context, bool isDark) {
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      itemCount: resultados.length,
+      itemCount: widget.resultados.length,
       itemBuilder: (context, index) {
-        final item = resultados[index];
+        final item = widget.resultados[index];
+        final negocioId = item['negocio_id'] as int?;
+        final esFavorito = negocioId != null && _favoritos.contains(negocioId);
+        final cargandoFav = negocioId != null && _loadingFavoritos.contains(negocioId);
+
         return Card(
           color: isDark ? Colors.grey[900] : Colors.white,
           margin: const EdgeInsets.only(bottom: 16.0),
@@ -130,14 +204,13 @@ class ResultsScreen extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
             onTap: () {
-              final negocioId = item['negocio_id'];
               if (negocioId != null) {
                 Navigator.push(
                   context,
                   PageRouteBuilder(
                     pageBuilder: (context, animation, secondaryAnimation) =>
                         BusinessDetailScreen(
-                      negocioId: negocioId as int,
+                      negocioId: negocioId,
                       negocioNombre: item['negocio'] ?? 'Negocio',
                     ),
                     transitionsBuilder:
@@ -154,48 +227,79 @@ class ResultsScreen extends StatelessWidget {
                       );
                     },
                   ),
-                );
+                ).then((_) => _cargarFavoritos());
               }
             },
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16.0),
-              leading: Container(
-                padding: const EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.restaurant, color: Theme.of(context).primaryColor),
-              ),
-              title: Text(
-                item['platillo'] ?? 'Platillo',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
                 children: [
-                  const SizedBox(height: 8),
-                  Text('📍 ${item['negocio'] ?? 'Negocio'}'),
-                  const SizedBox(height: 4),
-                  Row(
+                  // Ícono de restaurante
+                  Container(
+                    padding: const EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.restaurant, color: Theme.of(context).primaryColor),
+                  ),
+                  const SizedBox(width: 12),
+                  // Info del platillo
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['platillo'] ?? 'Platillo',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 4),
+                        Text('📍 ${item['negocio'] ?? 'Negocio'}'),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 14),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${item['calificacionPromedio'] ?? 'N/A'}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Precio y botón corazón
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 16),
-                      const SizedBox(width: 4),
                       Text(
-                        '${item['calificacionPromedio'] ?? 'N/A'}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        '\$${item['precio'] ?? '0.00'}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Theme.of(context).primaryColor,
+                        ),
                       ),
+                      const SizedBox(height: 4),
+                      if (negocioId != null)
+                        cargandoFav
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : GestureDetector(
+                                onTap: () => _toggleFavorito(negocioId),
+                                child: Icon(
+                                  esFavorito ? Icons.favorite : Icons.favorite_border,
+                                  color: esFavorito ? Colors.red : Colors.grey,
+                                  size: 22,
+                                ),
+                              ),
                     ],
                   ),
                 ],
-              ),
-              trailing: Text(
-                '\$${item['precio'] ?? '0.00'}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Theme.of(context).primaryColor,
-                ),
               ),
             ),
           ),

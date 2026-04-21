@@ -117,7 +117,226 @@ const obtenerNegocio = async (req, res) => {
     }
 };
 
+// GET /api/negocios/mio - Obtener el negocio del dueño autenticado
+const obtenerMiNegocio = async (req, res) => {
+    const usuarioId = req.usuario.id;
+    try {
+        const [negocios] = await db.execute(
+            `SELECT id, nombre, descripcion, tipoComida AS categoria,
+                    calificacionPromedio, direccion, horarioApertura, horarioCierre
+             FROM Negocio WHERE dueno_id = ?`,
+            [usuarioId]
+        );
+        if (negocios.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: { message: 'No tienes un negocio registrado', code: 'NOT_FOUND' }
+            });
+        }
+        const negocio = negocios[0];
+        const [menu] = await db.execute(
+            'SELECT id, nombre, descripcion, precio, disponible FROM Producto WHERE negocio_id = ? ORDER BY nombre ASC',
+            [negocio.id]
+        );
+        res.status(200).json({ success: true, data: { ...negocio, menu } });
+    } catch (error) {
+        logger.error('Error al obtener mi negocio', { error: error.message });
+        res.status(500).json({ success: false, error: { message: 'Error interno', code: 'INTERNAL_ERROR' } });
+    }
+};
+
+// GET /api/negocios/:id/dashboard - Estadísticas del negocio para el dueño
+const obtenerDashboard = async (req, res) => {
+    const parsedId = parseInt(req.params.id, 10);
+    if (isNaN(parsedId) || parsedId <= 0) {
+        return res.status(400).json({ success: false, error: { message: 'ID inválido', code: 'VALIDATION_ERROR' } });
+    }
+
+    try {
+        const [negocioRows] = await db.execute('SELECT dueno_id FROM Negocio WHERE id = ?', [parsedId]);
+        if (negocioRows.length === 0) {
+            return res.status(404).json({ success: false, error: { message: 'Negocio no encontrado', code: 'NOT_FOUND' } });
+        }
+        if (negocioRows[0].dueno_id !== req.usuario.id) {
+            return res.status(403).json({ success: false, error: { message: 'No tienes permiso para ver este dashboard', code: 'FORBIDDEN' } });
+        }
+
+        const [[{ totalFavoritos }]] = await db.execute(
+            'SELECT COUNT(*) AS totalFavoritos FROM Favorito WHERE negocio_id = ?', [parsedId]
+        );
+        const [[{ totalResenas, promedioCalificacion }]] = await db.execute(
+            'SELECT COUNT(*) AS totalResenas, AVG(calificacion) AS promedioCalificacion FROM Resena WHERE negocio_id = ?', [parsedId]
+        );
+        const [[{ totalProductos, productosDisponibles }]] = await db.execute(
+            'SELECT COUNT(*) AS totalProductos, SUM(disponible) AS productosDisponibles FROM Producto WHERE negocio_id = ?', [parsedId]
+        );
+
+        logger.info('Dashboard consultado', { negocio_id: parsedId });
+        res.status(200).json({
+            success: true,
+            data: {
+                totalFavoritos,
+                totalResenas,
+                promedioCalificacion: promedioCalificacion ? parseFloat(promedioCalificacion).toFixed(2) : '0.00',
+                totalProductos,
+                productosDisponibles: productosDisponibles || 0,
+            }
+        });
+    } catch (error) {
+        logger.error('Error al obtener dashboard', { negocio_id: parsedId, error: error.message });
+        res.status(500).json({ success: false, error: { message: 'Error interno', code: 'INTERNAL_ERROR' } });
+    }
+};
+
+// Helper para verificar que el negocio pertenece al usuario autenticado
+const _verificarDueno = async (negocioId, usuarioId) => {
+    const [rows] = await db.execute('SELECT dueno_id FROM Negocio WHERE id = ?', [negocioId]);
+    if (rows.length === 0) return { error: 'NOT_FOUND' };
+    if (rows[0].dueno_id !== usuarioId) return { error: 'FORBIDDEN' };
+    return { ok: true };
+};
+
+// POST /api/negocios/:id/productos - Agregar platillo al menú
+const agregarProducto = async (req, res) => {
+    const parsedId = parseInt(req.params.id, 10);
+    if (isNaN(parsedId) || parsedId <= 0) {
+        return res.status(400).json({ success: false, error: { message: 'ID inválido', code: 'VALIDATION_ERROR' } });
+    }
+
+    const { nombre, descripcion, precio } = req.body;
+    if (!nombre || precio === undefined || precio === null) {
+        return res.status(400).json({ success: false, error: { message: 'Nombre y precio son requeridos', code: 'VALIDATION_ERROR' } });
+    }
+    const parsedPrecio = parseFloat(precio);
+    if (isNaN(parsedPrecio) || parsedPrecio <= 0) {
+        return res.status(400).json({ success: false, error: { message: 'El precio debe ser mayor a 0', code: 'VALIDATION_ERROR' } });
+    }
+
+    try {
+        const check = await _verificarDueno(parsedId, req.usuario.id);
+        if (check.error === 'NOT_FOUND') return res.status(404).json({ success: false, error: { message: 'Negocio no encontrado', code: 'NOT_FOUND' } });
+        if (check.error === 'FORBIDDEN') return res.status(403).json({ success: false, error: { message: 'No tienes permiso', code: 'FORBIDDEN' } });
+
+        const [result] = await db.execute(
+            'INSERT INTO Producto (negocio_id, nombre, descripcion, precio, disponible) VALUES (?, ?, ?, ?, TRUE)',
+            [parsedId, nombre.trim(), descripcion ? descripcion.trim() : null, parsedPrecio]
+        );
+
+        logger.info('Producto agregado', { negocio_id: parsedId, nombre });
+        res.status(201).json({ success: true, data: { id: result.insertId, negocio_id: parsedId, nombre: nombre.trim(), descripcion: descripcion || null, precio: parsedPrecio, disponible: true } });
+    } catch (error) {
+        logger.error('Error al agregar producto', { error: error.message });
+        res.status(500).json({ success: false, error: { message: 'Error interno', code: 'INTERNAL_ERROR' } });
+    }
+};
+
+// PUT /api/negocios/:id/productos/:productoId - Actualizar platillo
+const actualizarProducto = async (req, res) => {
+    const parsedId = parseInt(req.params.id, 10);
+    const parsedProductoId = parseInt(req.params.productoId, 10);
+    if (isNaN(parsedId) || parsedId <= 0 || isNaN(parsedProductoId) || parsedProductoId <= 0) {
+        return res.status(400).json({ success: false, error: { message: 'IDs inválidos', code: 'VALIDATION_ERROR' } });
+    }
+
+    const { nombre, descripcion, precio } = req.body;
+    if (!nombre || precio === undefined || precio === null) {
+        return res.status(400).json({ success: false, error: { message: 'Nombre y precio son requeridos', code: 'VALIDATION_ERROR' } });
+    }
+    const parsedPrecio = parseFloat(precio);
+    if (isNaN(parsedPrecio) || parsedPrecio <= 0) {
+        return res.status(400).json({ success: false, error: { message: 'El precio debe ser mayor a 0', code: 'VALIDATION_ERROR' } });
+    }
+
+    try {
+        const check = await _verificarDueno(parsedId, req.usuario.id);
+        if (check.error === 'NOT_FOUND') return res.status(404).json({ success: false, error: { message: 'Negocio no encontrado', code: 'NOT_FOUND' } });
+        if (check.error === 'FORBIDDEN') return res.status(403).json({ success: false, error: { message: 'No tienes permiso', code: 'FORBIDDEN' } });
+
+        const [result] = await db.execute(
+            'UPDATE Producto SET nombre = ?, descripcion = ?, precio = ? WHERE id = ? AND negocio_id = ?',
+            [nombre.trim(), descripcion ? descripcion.trim() : null, parsedPrecio, parsedProductoId, parsedId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: { message: 'Producto no encontrado', code: 'NOT_FOUND' } });
+        }
+
+        logger.info('Producto actualizado', { producto_id: parsedProductoId, negocio_id: parsedId });
+        res.status(200).json({ success: true, data: { id: parsedProductoId, nombre: nombre.trim(), descripcion: descripcion || null, precio: parsedPrecio } });
+    } catch (error) {
+        logger.error('Error al actualizar producto', { error: error.message });
+        res.status(500).json({ success: false, error: { message: 'Error interno', code: 'INTERNAL_ERROR' } });
+    }
+};
+
+// DELETE /api/negocios/:id/productos/:productoId - Eliminar platillo
+const eliminarProducto = async (req, res) => {
+    const parsedId = parseInt(req.params.id, 10);
+    const parsedProductoId = parseInt(req.params.productoId, 10);
+    if (isNaN(parsedId) || parsedId <= 0 || isNaN(parsedProductoId) || parsedProductoId <= 0) {
+        return res.status(400).json({ success: false, error: { message: 'IDs inválidos', code: 'VALIDATION_ERROR' } });
+    }
+
+    try {
+        const check = await _verificarDueno(parsedId, req.usuario.id);
+        if (check.error === 'NOT_FOUND') return res.status(404).json({ success: false, error: { message: 'Negocio no encontrado', code: 'NOT_FOUND' } });
+        if (check.error === 'FORBIDDEN') return res.status(403).json({ success: false, error: { message: 'No tienes permiso', code: 'FORBIDDEN' } });
+
+        const [result] = await db.execute(
+            'DELETE FROM Producto WHERE id = ? AND negocio_id = ?',
+            [parsedProductoId, parsedId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: { message: 'Producto no encontrado', code: 'NOT_FOUND' } });
+        }
+
+        logger.info('Producto eliminado', { producto_id: parsedProductoId, negocio_id: parsedId });
+        res.status(200).json({ success: true, data: { message: 'Producto eliminado correctamente' } });
+    } catch (error) {
+        logger.error('Error al eliminar producto', { error: error.message });
+        res.status(500).json({ success: false, error: { message: 'Error interno', code: 'INTERNAL_ERROR' } });
+    }
+};
+
+// PATCH /api/negocios/:id/productos/:productoId/disponibilidad - Toggle disponibilidad
+const toggleDisponibilidad = async (req, res) => {
+    const parsedId = parseInt(req.params.id, 10);
+    const parsedProductoId = parseInt(req.params.productoId, 10);
+    if (isNaN(parsedId) || parsedId <= 0 || isNaN(parsedProductoId) || parsedProductoId <= 0) {
+        return res.status(400).json({ success: false, error: { message: 'IDs inválidos', code: 'VALIDATION_ERROR' } });
+    }
+
+    try {
+        const check = await _verificarDueno(parsedId, req.usuario.id);
+        if (check.error === 'NOT_FOUND') return res.status(404).json({ success: false, error: { message: 'Negocio no encontrado', code: 'NOT_FOUND' } });
+        if (check.error === 'FORBIDDEN') return res.status(403).json({ success: false, error: { message: 'No tienes permiso', code: 'FORBIDDEN' } });
+
+        const [result] = await db.execute(
+            'UPDATE Producto SET disponible = NOT disponible WHERE id = ? AND negocio_id = ?',
+            [parsedProductoId, parsedId]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: { message: 'Producto no encontrado', code: 'NOT_FOUND' } });
+        }
+
+        const [[producto]] = await db.execute('SELECT disponible FROM Producto WHERE id = ?', [parsedProductoId]);
+        logger.info('Disponibilidad cambiada', { producto_id: parsedProductoId, disponible: producto.disponible });
+        res.status(200).json({ success: true, data: { id: parsedProductoId, disponible: !!producto.disponible } });
+    } catch (error) {
+        logger.error('Error al cambiar disponibilidad', { error: error.message });
+        res.status(500).json({ success: false, error: { message: 'Error interno', code: 'INTERNAL_ERROR' } });
+    }
+};
+
 module.exports = {
     filtrarComida,
-    obtenerNegocio
+    obtenerNegocio,
+    obtenerMiNegocio,
+    obtenerDashboard,
+    agregarProducto,
+    actualizarProducto,
+    eliminarProducto,
+    toggleDisponibilidad,
 };
