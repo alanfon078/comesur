@@ -1,5 +1,6 @@
 // Autor: Alan Yael Fonseca Ruiz
 
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
@@ -54,7 +55,30 @@ class AuthService {
   // ¿Hay sesión activa?
   static Future<bool> estaAutenticado() async {
     final token = await obtenerToken();
-    return token != null && token.isNotEmpty;
+    if (token == null || token.isEmpty) return false;
+
+    // Decodificar payload del JWT (base64url, sin verificar firma)
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+
+      // El payload es la segunda parte del token (index 1)
+      final normalized = base64Url.normalize(parts[1]);
+      final payloadString = utf8.decode(base64Url.decode(normalized));
+      final payload = jsonDecode(payloadString);
+
+      final exp = payload['exp'] as int?;
+      if (exp == null) return false;
+
+      final expDate = DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      if (DateTime.now().isAfter(expDate)) {
+        await cerrarSesion(); // Limpiar sesión expirada
+        return false;
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // Cerrar sesión

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../logic/business_detail_controller.dart';
 import '../../resenas/widgets/rating_bottom_sheet.dart';
 import '../../resenas/logic/resena_controller.dart';
+import '../../../services/location_service.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final int negocioId;
@@ -22,6 +23,7 @@ class BusinessDetailScreen extends StatefulWidget {
 class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   final BusinessDetailController _controller = BusinessDetailController();
   final ResenaController _resenaController = ResenaController();
+  Future<String?>? _distanciaFuture;
 
   @override
   void initState() {
@@ -33,7 +35,17 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
   }
 
   void _onControllerUpdate() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      final n = _controller.negocio;
+      if (n != null && _distanciaFuture == null) {
+        final lat = n['latitud'] != null ? double.tryParse(n['latitud'].toString()) : null;
+        final lng = n['longitud'] != null ? double.tryParse(n['longitud'].toString()) : null;
+        if (lat != null && lng != null) {
+          _distanciaFuture = LocationService.calcularDistanciaFormateada(lat, lng);
+        }
+      }
+      setState(() {});
+    }
   }
 
   @override
@@ -57,7 +69,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
       // Recargar negocio para ver nuevo promedio y reseñas
       await _controller.cargarNegocio(widget.negocioId);
       await _resenaController.cargarMiResena(widget.negocioId);
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('¡Reseña guardada exitosamente!'),
@@ -168,6 +180,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
     final menu = (n['menu'] as List<dynamic>?) ?? [];
     final resenas = (n['resenas'] as List<dynamic>?) ?? [];
     final miResena = _resenaController.resenaExistente;
+    final lat = n['latitud'] != null ? double.tryParse(n['latitud'].toString()) : null;
+    final lng = n['longitud'] != null ? double.tryParse(n['longitud'].toString()) : null;
 
     return CustomScrollView(
       slivers: [
@@ -185,7 +199,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
               tooltip: _controller.esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos',
               onPressed: () async {
                 await _controller.toggleFavorito(widget.negocioId);
-                if (mounted) {
+                if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -279,7 +293,90 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                 ],
 
                 // Dirección y Horario
+                if (lat != null && lng != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      height: 150,
+                      width: double.infinity,
+                      color: isDark ? Colors.grey[850] : Colors.grey[200],
+                      child: Image.network(
+                        'https://staticmap.openstreetmap.de/staticmap.php?center=$lat,$lng&zoom=16&size=600x300&markers=$lat,$lng,red-pushpin',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.map_outlined, size: 40, color: Colors.grey),
+                                SizedBox(height: 4),
+                                Text(
+                                  'No se pudo cargar el mapa',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 _buildInfoRow(Icons.location_on, n['direccion'] ?? 'Dirección no disponible', primaryColor),
+                if (lat != null && lng != null && _distanciaFuture != null) ...[
+                  const SizedBox(height: 8),
+                  FutureBuilder<String?>(
+                    future: _distanciaFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 26),
+                          child: Text(
+                            'Calculando distancia...',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                          ),
+                        );
+                      }
+                      if (snapshot.hasData && snapshot.data != null) {
+                        return Row(
+                          children: [
+                            const SizedBox(width: 26),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.near_me, size: 12, color: primaryColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    snapshot.data!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
                 const SizedBox(height: 8),
                 _buildInfoRow(
                   Icons.access_time,
