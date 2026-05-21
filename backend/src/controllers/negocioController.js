@@ -2,9 +2,47 @@
 const db = require('../config/db');
 const logger = require('../config/logger');
 
+function calcularDistancia(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matriz = [];
+
+    for (let i = 0; i <= b.length; i++) matriz[i] = [i];
+    for (let j = 0; j <= a.length; j++) matriz[0][j] = j;
+
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matriz[i][j] = matriz[i - 1][j - 1];
+            } else {
+                matriz[i][j] = Math.min(
+                    matriz[i - 1][j - 1] + 1, // Sustituyó una letra
+                    Math.min(
+                        matriz[i][j - 1] + 1, // Añadió una letra
+                        matriz[i - 1][j] + 1  // Omitió una letra
+                    )
+                );
+            }
+        }
+    }
+    return matriz[b.length][a.length];
+}
+
 const filtrarComida = async (req, res) => {
     try {
         const { tipoComida, presupuesto } = req.query;
+
+        if (!tipoComida || tipoComida.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: 'Debe ingresar un término de búsqueda',
+                    code: 'VALIDATION_ERROR'
+                }
+            });
+        }
+
         let query = `
             SELECT p.id AS producto_id, p.nombre AS platillo, p.precio,
                    n.id AS negocio_id, n.nombre AS negocio, n.calificacionPromedio
@@ -14,12 +52,7 @@ const filtrarComida = async (req, res) => {
         `;
         const queryParams = [];
 
-        if (tipoComida) {
-            // Buscar en la categoría del negocio o en el nombre del platillo
-            query += ` AND (n.tipoComida LIKE ? OR p.nombre LIKE ?)`;
-            queryParams.push(`%${tipoComida}%`, `%${tipoComida}%`);
-        }   
-
+        // Filtramos por presupuesto directamente en la base de datos si existe
         if (presupuesto && !isNaN(presupuesto) && Number(presupuesto) > 0) {
             query += ` AND p.precio <= ?`;
             queryParams.push(Number(presupuesto));
@@ -27,11 +60,53 @@ const filtrarComida = async (req, res) => {
 
         query += ` ORDER BY n.calificacionPromedio DESC`;
 
-        logger.info('Ejecutando búsqueda de comida', { tipoComida, presupuesto });
-        const [resultados] = await db.execute(query, queryParams);
+        logger.info('Ejecutando búsqueda de comida en DB', { presupuesto });
+        const [todasLasComidas] = await db.execute(query, queryParams);
 
-        if (resultados.length === 0) {
-            logger.info('Búsqueda sin resultados', { tipoComida, presupuesto });
+        // Algoritmo de Búsqueda Difusa en memoria
+        const busqueda = tipoComida.toLowerCase().trim();
+        const limiteErrores = 3; // Permite hasta 3 errores de dedo
+
+        const resultadosFiltrados = todasLasComidas.filter(item => {
+                    const textosAComparar = [
+                        item.platillo,
+                        item.categoria,
+                    ].filter(Boolean).map(t => t.toLowerCase());
+
+                    // 1er Filtro Rápido: Coincidencia exacta o parcial directa
+                    if (textosAComparar.some(t => t.includes(busqueda))) {
+                        return true;
+                    }
+
+                    // 2do Filtro: Tolerancia a fallos mejorada
+                    for (let texto of textosAComparar) {
+                        // MEJORA 1: Comparar la frase completa contra la frase completa
+                        // Esto soluciona tu problema con "gringa asadx" vs "gringa asada"
+                        if (calcularDistancia(busqueda, texto) <= limiteErrores) {
+                            return true;
+                        }
+
+                        const palabrasTexto = texto.split(' ');
+                        const palabrasBusqueda = busqueda.split(' ');
+
+                        for (let pBusqueda of palabrasBusqueda) {
+                            // Ignoramos artículos cortos (ej. "el", "de", "la") para no tener falsos positivos
+                            if (pBusqueda.length < 3) continue;
+
+                            for (let pTexto of palabrasTexto) {
+                                // Usamos un límite más estricto (2) para palabras individuales
+                                if (calcularDistancia(pBusqueda, pTexto) <= 2) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    return false;
+                });
+
+        // Respuesta estándar como ya la tenías estructurada
+        if (resultadosFiltrados.length === 0) {
+            logger.info('Búsqueda sin resultados tras filtro difuso', { tipoComida, presupuesto });
             return res.status(404).json({
                 success: false,
                 error: {
@@ -41,7 +116,7 @@ const filtrarComida = async (req, res) => {
             });
         }
 
-        res.status(200).json({ success: true, data: resultados });
+        res.status(200).json({ success: true, data: resultadosFiltrados });
     } catch (error) {
         logger.error('Error al filtrar comida', { error: error.message, stack: error.stack });
         res.status(500).json({
