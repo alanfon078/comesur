@@ -60,17 +60,21 @@ class _FilterScreenState extends State<FilterScreen> {
 
       // Manejar el resultado devuelto por el controlador
       if (_filterController.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_filterController.error!),
-            backgroundColor: Colors.red[700],
-            action: SnackBarAction(
-              label: 'Reintentar',
-              textColor: Colors.white,
-              onPressed: _aplicarFiltros,
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(_filterController.error!),
+              backgroundColor: Colors.red[700],
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Reintentar',
+                textColor: Colors.white,
+                onPressed: _aplicarFiltros,
+              ),
             ),
-          ),
-        );
+          );
       } else {
         // Éxito: Actualizar historial y navegar a resultados
         _cargarHistorial();

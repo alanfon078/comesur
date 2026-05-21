@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../logic/business_detail_controller.dart';
 import '../../resenas/widgets/rating_bottom_sheet.dart';
 import '../../resenas/logic/resena_controller.dart';
+import '../widgets/location_map_widget.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final int negocioId;
@@ -58,12 +59,15 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
       await _controller.cargarNegocio(widget.negocioId);
       await _resenaController.cargarMiResena(widget.negocioId);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Reseña guardada exitosamente!'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('¡Reseña guardada exitosamente!'),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
       }
     }
   }
@@ -186,14 +190,17 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
               onPressed: () async {
                 await _controller.toggleFavorito(widget.negocioId);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        _controller.esFavorito ? 'Agregado a favoritos' : 'Quitado de favoritos',
+                  ScaffoldMessenger.of(context)
+                    ..clearSnackBars()
+                    ..showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          _controller.esFavorito ? 'Agregado a favoritos' : 'Quitado de favoritos',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 1),
                       ),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
+                    );
                 }
               },
             ),
@@ -329,7 +336,16 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                 if (resenas.isEmpty)
                   const Text('Aún no hay reseñas para este negocio.')
                 else
-                  ...resenas.map((r) => _buildResenaCard(r, isDark)),
+                ...resenas.map((r) => _buildResenaCard(r, isDark)),
+
+                // Mini mapa de ubicación (solo si hay coordenadas)
+                if (n['latitud'] != null && n['longitud'] != null)
+                  LocationMapWidget(
+                    latitud: double.tryParse(n['latitud'].toString()) ?? 0,
+                    longitud: double.tryParse(n['longitud'].toString()) ?? 0,
+                    direccion: n['direccion'] ?? 'Dirección no disponible',
+                    negocioNombre: n['nombre'] ?? widget.negocioNombre,
+                  ),
 
                 const SizedBox(height: 24),
               ],

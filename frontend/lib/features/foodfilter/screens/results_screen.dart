@@ -77,10 +77,13 @@ class _ResultsScreenState extends State<ResultsScreen> {
     });
 
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(ahora ? 'Agregado a favoritos' : 'Quitado de favoritos'),
-        duration: const Duration(seconds: 1),
-      ));
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(SnackBar(
+          content: Text(ahora ? 'Agregado a favoritos' : 'Quitado de favoritos'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 1),
+        ));
     }
   }
 

@@ -71,7 +71,7 @@ const obtenerNegocio = async (req, res) => {
         // Obtener info del negocio
         const [negocios] = await db.execute(
             `SELECT id, nombre, descripcion, tipoComida AS categoria,
-                    calificacionPromedio, direccion,
+                    calificacionPromedio, direccion, latitud, longitud,
                     horarioApertura, horarioCierre, menuDelDia
              FROM Negocio WHERE id = ?`,
             [id]

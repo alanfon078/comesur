@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ComeSUR</string>
+    <!-- TODO: Reemplaza con tu Facebook App ID de https://developers.facebook.com -->
+    <string name="facebook_app_id">937587899311432</string>
+    <string name="fb_login_protocol_scheme">fb937587899311432</string>
+    <!-- TODO: Reemplaza con tu Client Token de Facebook (Settings > Advanced > Client Token) -->
+    <string name="facebook_client_token">a4e4cecd5d449b36e106077bd81c6e69</string>
+</resources>
