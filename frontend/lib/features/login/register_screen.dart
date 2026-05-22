@@ -43,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _contrasenaCtrl.text,
     );
     if (ok && mounted) {
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     }
   }
 

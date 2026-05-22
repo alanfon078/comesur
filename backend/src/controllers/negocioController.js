@@ -7,7 +7,8 @@ const filtrarComida = async (req, res) => {
         const { tipoComida, presupuesto } = req.query;
         let query = `
             SELECT p.id AS producto_id, p.nombre AS platillo, p.precio,
-                   n.id AS negocio_id, n.nombre AS negocio, n.calificacionPromedio
+                   n.id AS negocio_id, n.nombre AS negocio, n.calificacionPromedio,
+                   n.latitud, n.longitud, n.direccion
             FROM Producto p
             JOIN Negocio n ON p.negocio_id = n.id
             WHERE p.disponible = true
@@ -72,6 +73,7 @@ const obtenerNegocio = async (req, res) => {
         const [negocios] = await db.execute(
             `SELECT id, nombre, descripcion, tipoComida AS categoria,
                     calificacionPromedio, direccion,
+                    latitud, longitud,
                     horarioApertura, horarioCierre, menuDelDia
              FROM Negocio WHERE id = ?`,
             [id]

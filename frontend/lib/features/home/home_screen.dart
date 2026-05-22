@@ -1,6 +1,7 @@
 // Autor: Alan Yael Fonseca Ruiz
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../foodfilter/screens/filter_screen.dart';
 import '../favoritos/screens/favoritos_screen.dart';
 import '../perfil/screens/perfil_screen.dart';
@@ -117,24 +118,50 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ];
 
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) {
-          setState(() => _currentIndex = i);
-          // Al tocar Dashboard, limpiar badge de notificaciones
-          if (esDueno && i == 0 && nuevasResenas > 0) {
-            _dashboardController?.marcarResenasVistas();
-          }
-        },
-        selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: navItems,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('¿Salir de ComeSur?'),
+            content: const Text('¿Deseas salir de la aplicación?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Salir'),
+              ),
+            ],
+          ),
+        );
+        if (shouldExit == true && context.mounted) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: screens,
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (i) {
+            setState(() => _currentIndex = i);
+            // Al tocar Dashboard, limpiar badge de notificaciones
+            if (esDueno && i == 0 && nuevasResenas > 0) {
+              _dashboardController?.marcarResenasVistas();
+            }
+          },
+          selectedItemColor: primaryColor,
+          unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed,
+          items: navItems,
+        ),
       ),
     );
   }

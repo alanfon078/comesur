@@ -73,7 +73,7 @@ class BusinessDetailController extends ChangeNotifier {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://192.168.137.1:3000/api/favoritos'),
+        Uri.parse('${ApiConstants.baseUrl}/favoritos'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 
@@ -97,7 +97,7 @@ class BusinessDetailController extends ChangeNotifier {
 
       if (esFavorito) {
         final response = await http.delete(
-          Uri.parse('http://10.0.2.2:3000/api/favoritos/$negocioId'),
+          Uri.parse('${ApiConstants.baseUrl}/favoritos/$negocioId'),
           headers: {'Authorization': 'Bearer $token'},
         ).timeout(const Duration(seconds: 10));
 
@@ -107,7 +107,7 @@ class BusinessDetailController extends ChangeNotifier {
         }
       } else {
         final response = await http.post(
-          Uri.parse('http://10.0.2.2:3000/api/favoritos'),
+          Uri.parse('${ApiConstants.baseUrl}/favoritos'),
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',

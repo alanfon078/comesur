@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../services/auth_service.dart';
+import '../../../services/api_constants.dart';
 
-const String _baseUrl = 'http://10.0.2.2:3000/api';
+final String _baseUrl = ApiConstants.baseUrl;
 
 class DisponibilidadController extends ChangeNotifier {
   bool isLoading = false;
