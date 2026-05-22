@@ -69,6 +69,49 @@ INSERT INTO Producto (negocio_id, nombre, descripcion, precio, disponible) VALUE
 (5, 'Gringa Grande', 'Gringa grande de torilla de harina con carne a seleccionar', 60.00, TRUE),
 (5, 'Hamburguesa doble', 'Hamburguesa tradicional con doble carne', 60.00, TRUE);
 
+INSERT INTO Producto (negocio_id, nombre, descripcion, precio, disponible) VALUES
+(5, 'Gringa Grande', 'Gringa grande de torilla de harina con carne a seleccionar', 60.00, TRUE),
+(5, 'Hamburguesa doble', 'Hamburguesa tradicional con doble carne', 60.00, TRUE);
+
+INSERT INTO Producto (negocio_id, nombre, descripcion, precio, disponible) VALUES
+(5, 'Chilaquiles sencillos', 'Totopos bañados en salsa con frijoles refritos', 45.00, 1),
+(5, 'Chilaquiles con Huevo', 'Totopos en salsa con huevo estrellado o revuelto y frijoles', 53.00, 1),
+(5, 'Chilaquiles Especiales', 'Totopos en salsa con huevo al gusto y frijoles refritos', 58.00, 1),
+(5, 'Hot Dog', 'Clásico perro caliente con salchicha y aderezos', 23.00, 1),
+(5, 'Perriburguer', 'Deliciosa combinación de hamburguesa con salchicha de hot dog', 55.00, 1),
+(5, 'Gringa Grande', 'Tortilla de harina grande con carne al pastor y queso derretido', 50.00, 1),
+(5, 'Burra Gigante', 'Burrito de gran tamaño relleno de carne y queso', 50.00, 1),
+(5, 'Burrito', 'Tortilla de harina enrollada con el guiso de tu elección', 25.00, 1),
+(5, 'Sincronizada', 'Tortillas de harina con jamón y queso derretido', 40.00, 1),
+(5, 'Sincronizada Gigante', 'Sincronizada de gran tamaño con doble porción de jamón y queso', 65.00, 1),
+(5, 'Tacos surtidos', 'Orden de tacos con opciones de bisteck, pastor o chorizo', 15.00, 1),
+(5, 'Molletes', 'Pan bolillo con frijoles refritos y queso gratinado', 25.00, 1),
+(5, 'Hamburguesa Sencilla', 'Hamburguesa clásica con carne, verduras y aderezos', 40.00, 1),
+(5, 'Hamburguesa Especial', 'Hamburguesa con ingredientes extra a elegir', 45.00, 1),
+(5, 'Hamburguesa Doble', 'Hamburguesa con doble porción de carne y queso', 55.00, 1),
+(5, 'Papas Extra', 'Porción adicional de papas fritas crujientes', 15.00, 1),
+(5, 'Sandwich', 'Emparedado clásico con pan de caja, jamón y verdura', 25.00, 1),
+(5, 'Club Sandwich', 'Sándwich de varios pisos con pollo, jamón, tocino y queso', 40.00, 1),
+(5, 'Quesadilla', 'Tortilla doblada con queso derretido', 25.00, 1),
+(5, 'Huaraches', 'Base de masa de maíz alargada con frijoles y carne encima', 50.00, 1),
+(5, 'Huaraches Grande', 'Huarache de maíz de gran tamaño con guiso a elegir', 62.00, 1),
+(5, 'Huarache Cubano', 'Huarache preparado al estilo cubano con ingredientes combinados', 55.00, 1),
+(5, 'Huarache Cubano Grande', 'Huarache cubano de tamaño grande bien servido', 67.00, 1),
+(5, 'Tortas 1 Ingrediente', 'Torta tradicional mexicana con un ingrediente a elegir', 38.00, 1),
+(5, 'Tortas 2 Ingredientes', 'Torta tradicional con combinación de dos ingredientes', 43.00, 1),
+(5, 'Torta Cubana', 'Torta clásica con pierna, jamón, milanesa, queso y más', 48.00, 1),
+(5, 'Omelet', 'Huevo batido cocinado con verduras o queso en su interior', 40.00, 1),
+(5, 'Baguette', 'Pan estilo francés relleno de carnes frías y vegetales', 60.00, 1),
+(5, 'Maruchan', 'Sopa instantánea de fideos en vaso', 25.00, 1),
+(5, 'Café en Taza/Termo', 'Café caliente servido en taza o termo para llevar', 13.00, 1),
+(5, 'Café en Vaso', 'Café caliente tradicional servido en vaso', 15.00, 1),
+(5, 'Té o Café Negro en Taza/Termo', 'Infusión caliente o café americano sin leche', 10.00, 1),
+(5, 'Té o Café Negro en Vaso', 'Infusión o café americano servido en vaso', 12.00, 1),
+(5, 'Agua Fresca Termo Chico', 'Agua de fruta natural, presentación de 1/2 litro', 16.00, 1),
+(5, 'Agua Fresca Termo Grande', 'Agua de fruta natural, presentación de 1 litro', 22.00, 1),
+(5, 'Agua Fresca Vaso Chico', 'Refrescante agua de fruta natural en vaso pequeño', 20.00, 1),
+(5, 'Agua Fresca Vaso Grande', 'Refrescante agua de fruta natural en vaso grande', 27.00, 1);
+
 update Negocio
 set direccion = 'Avenida Educación Superior 2000, Colonia Benito Juárez, C.P. 38982'
 where id = 5;
