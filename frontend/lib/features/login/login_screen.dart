@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'COMESUR',
                     style: TextStyle(
                       fontSize: 32,
-                      fontWeight: FontWeight.black,
+                      fontWeight: FontWeight.w800,
                       letterSpacing: 3.0,
                     ),
                   ),
