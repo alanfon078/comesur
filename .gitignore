@@ -1,0 +1,84 @@
+# ===================================================
+# DEPENDENCIAS Y LIBRERÍAS GENERALES
+# (NPM, Yarn, Composer, Bower, Gradle, Maven, Bundler)
+# ===================================================
+
+# Node / NPM / Yarn / Bower
+node_modules/
+bower_components/
+.yarn/
+.pnp.*
+
+# Composer (PHP)
+vendor/
+
+# Gradle / Maven (Java/Android)
+.gradle/
+target/
+
+# Bundler (Ruby)
+.bundle/
+vendor/bundle/
+
+
+# ===================================================
+# BACKEND
+# ===================================================
+backend/node_modules/
+backend/.env
+backend/logs/
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+
+# ===================================================
+# FRONTEND 
+# ===================================================
+# Flutter/Dart/Pub relacionados
+frontend/**/doc/api/
+frontend/**/ios/Flutter/.last_build_id
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.pub-cache/
+frontend/.pub/
+frontend/build/
+frontend/coverage/
+
+# Artefactos de compilación de Android Studio
+frontend/android/app/debug/
+frontend/android/app/profile/
+frontend/android/app/release/
+
+# Simbolización y ofuscación
+frontend/app.*.symbols
+frontend/app.*.map.json
+
+
+# ===================================================
+# ARCHIVOS DEL SISTEMA, MISCELÁNEOS Y EDITORES (IDE)
+# ===================================================
+
+# Sistemas operativos y varios
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code (Descomentar si deseas ignorar la configuración del editor local)
+#.vscode/

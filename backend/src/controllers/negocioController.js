@@ -5,6 +5,17 @@ const logger = require('../config/logger');
 const filtrarComida = async (req, res) => {
     try {
         const { tipoComida, presupuesto } = req.query;
+
+        if (presupuesto && parseFloat(presupuesto) <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: {
+                    message: "El presupuesto debe ser mayor a 0",
+                    code: "VALIDATION_ERROR"
+                }
+            });
+        }
+        
         let query = `
             SELECT p.id AS producto_id, p.nombre AS platillo, p.precio,
                    n.id AS negocio_id, n.nombre AS negocio, n.calificacionPromedio,
